@@ -748,7 +748,7 @@ async function validateServerAuth(path, request, env) {
 // ==================== 统一数据库错误处理 ====================
 
 function handleDbError(error, corsHeaders, operation = 'database operation') {
-  console.error(`数据库错误在 \${operation}:`, error);
+  console.error(`数据库错误在 ${operation}:`, error);
   
   if (error.message.includes('no such table')) {
     return createErrorResponse(
@@ -1939,6 +1939,22 @@ async function handleServerRoutes(path, method, request, env, corsHeaders) {
 
 // Ping节点管理路由处理器
 async function handlePingNodeRoutes(path, method, request, env, corsHeaders) {
+  // 公开获取启用的ping节点列表（首页展示）
+  if (path === '/api/ping-nodes' && method === 'GET') {
+    try {
+      const { results } = await env.DB.prepare(`
+        SELECT id, name, target_address, description, enabled, created_at
+        FROM ping_nodes
+        WHERE enabled = 1
+        ORDER BY sort_order IS NULL, sort_order ASC, created_at ASC
+      `).all();
+
+      return createSuccessResponse({ ping_nodes: results || [] }, corsHeaders);
+    } catch (error) {
+      return handleDbError(error, corsHeaders, '获取ping节点列表');
+    }
+  }
+
   // 获取所有ping节点（管理员）
   if (path === '/api/admin/ping-nodes' && method === 'GET') {
     const user = await authenticateAdmin(request, env);
@@ -5716,6 +5732,49 @@ function getIndexHtml() {
                         </div>
                     </div>
                 </div>
+
+                <!-- 分隔线 -->
+                <hr class="my-4">
+
+                <!-- Ping节点展示 -->
+                <div>
+                    <h5 class="card-title mb-3">
+                        <i class="bi bi-diagram-3 me-2"></i>Ping节点
+                    </h5>
+
+                    <div id="publicNoPingNodes" class="alert alert-info d-none">
+                        暂无Ping节点，请在管理后台添加并启用节点。
+                    </div>
+
+                    <!-- 桌面端表格视图 -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>节点名称</th>
+                                    <th>目标地址</th>
+                                    <th>描述</th>
+                                    <th>创建时间</th>
+                                </tr>
+                            </thead>
+                            <tbody id="publicPingNodesTableBody">
+                                <tr>
+                                    <td colspan="4" class="text-center">加载中...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 移动端卡片视图 -->
+                    <div class="mobile-card-container" id="publicMobilePingNodes">
+                        <div class="text-center p-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">加载中...</span>
+                            </div>
+                            <div class="mt-2">加载Ping节点...</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -8537,6 +8596,7 @@ let vpsUpdateInterval = null;
 let siteUpdateInterval = null;
 let serverDataCache = {}; // Cache server data to avoid re-fetching for details
 let vpsStatusCache = {}; // 用于跟踪VPS状态变化
+let publicPingNodes = []; // 首页展示的Ping节点缓存
 const DEFAULT_VPS_REFRESH_INTERVAL_MS = 60000; // Default to 60 seconds for VPS data if backend setting fails
 const DEFAULT_SITE_REFRESH_INTERVAL_MS = 60000; // Default to 60 seconds for Site data
 
@@ -8782,6 +8842,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load initial data
     loadAllServerStatuses();
     loadAllSiteStatuses();
+    loadPublicPingNodes();
 
     // Initialize periodic updates separately
         initializeVpsDataUpdates();
@@ -10435,6 +10496,114 @@ function formatUptime(totalSeconds) {
     }
 
     return uptimeString.trim() || '0分钟'; // Default to 0 minutes if string is empty
+}
+
+// --- Ping Nodes (Public Homepage) ---
+
+const UNIX_SECONDS_MAX = 9999999999; // 最大10位秒级Unix时间戳(约2286-11-20)，更大值视为毫秒时间戳；后端存储为秒
+const PUBLIC_PING_NODE_STATUS = { text: '启用', className: 'badge bg-success' }; // 公共接口仅返回启用节点
+
+function normalizeCreatedAtTimestamp(createdAt) {
+    if (typeof createdAt !== 'number' || Number.isNaN(createdAt)) {
+        return null;
+    }
+    // 后端以秒为单位写入；如收到毫秒级数据则数值会超过UNIX_SECONDS_MAX
+    return createdAt > UNIX_SECONDS_MAX ? createdAt : createdAt * 1000;
+}
+
+function renderPublicPingStatusBadge() {
+    return `<span class="${PUBLIC_PING_NODE_STATUS.className}">${PUBLIC_PING_NODE_STATUS.text}</span>`;
+}
+
+function setPublicPingNodesLoadingState(tableBody, mobileContainer) {
+    if (tableBody) {
+        tableBody.innerHTML = '<tr><td colspan="4" class="text-center">加载中...</td></tr>';
+    }
+    if (mobileContainer) {
+        mobileContainer.innerHTML = `
+            <div class="text-center p-3">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">加载中...</span>
+                </div>
+                <div class="mt-2">加载Ping节点...</div>
+            </div>
+        `;
+    }
+}
+
+async function loadPublicPingNodes() {
+    const tableBody = document.getElementById('publicPingNodesTableBody');
+    const mobileContainer = document.getElementById('publicMobilePingNodes');
+    const emptyState = document.getElementById('publicNoPingNodes');
+
+    if (!tableBody || !mobileContainer || !emptyState) {
+        return;
+    }
+
+    setPublicPingNodesLoadingState(tableBody, mobileContainer);
+
+    try {
+        const data = await publicApiRequest('/api/ping-nodes');
+        publicPingNodes = data.ping_nodes || [];
+        renderPublicPingNodes(publicPingNodes);
+
+        if (publicPingNodes.length === 0) {
+            emptyState.classList.remove('d-none');
+        } else {
+            emptyState.classList.add('d-none');
+        }
+    } catch (error) {
+        tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">加载Ping节点失败</td></tr>';
+        mobileContainer.innerHTML = '<div class="text-center text-danger p-3">加载失败</div>';
+        emptyState.classList.remove('d-none');
+    }
+}
+
+function renderPublicPingNodes(nodes = []) {
+    const tableBody = document.getElementById('publicPingNodesTableBody');
+    const mobileContainer = document.getElementById('publicMobilePingNodes');
+
+    if (!tableBody || !mobileContainer) {
+        return;
+    }
+
+    tableBody.innerHTML = '';
+    mobileContainer.innerHTML = '';
+
+    if (!nodes.length) {
+        tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">暂无Ping节点</td></tr>';
+        mobileContainer.innerHTML = '<div class="text-center text-muted p-3">暂无Ping节点</div>';
+        return;
+    }
+
+    nodes.forEach(node => {
+        const createdAtMs = normalizeCreatedAtTimestamp(node.created_at);
+        const createdAt = createdAtMs ? new Date(createdAtMs).toLocaleString('zh-CN') : '-';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${node.name || '-'}</td>
+            <td>${node.target_address || '-'}</td>
+            <td>${node.description || '-'}</td>
+            <td>${createdAt}</td>
+        `;
+        tableBody.appendChild(row);
+
+        const card = document.createElement('div');
+        card.className = 'mobile-site-card';
+        card.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <div>
+                    <div class="fw-semibold">${node.name || '未命名节点'}</div>
+                    <small class="text-muted">${node.target_address || ''}</small>
+                </div>
+                ${renderPublicPingStatusBadge()}
+            </div>
+            <div class="text-muted mb-1">${node.description || '无描述'}</div>
+            <small class="text-muted">创建于 ${createdAt}</small>
+        `;
+        mobileContainer.appendChild(card);
+    });
 }
 
 
