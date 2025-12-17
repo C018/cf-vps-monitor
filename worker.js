@@ -1973,7 +1973,7 @@ async function handlePingNodeRoutes(path, method, request, env, corsHeaders) {
         return createErrorResponse('Bad Request', '节点名称和目标地址不能为空', 400, corsHeaders);
       }
 
-      const nodeId = generateUniqueId();
+      const nodeId = generateId();
       const now = Math.floor(Date.now() / 1000);
 
       await env.DB.prepare(`
