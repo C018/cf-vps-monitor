@@ -10520,14 +10520,14 @@ function setPublicPingNodesLoadingState(tableBody, mobileContainer) {
         tableBody.innerHTML = '<tr><td colspan="4" class="text-center">加载中...</td></tr>';
     }
     if (mobileContainer) {
-        mobileContainer.innerHTML = `
+        mobileContainer.innerHTML = \`
             <div class="text-center p-3">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">加载中...</span>
                 </div>
                 <div class="mt-2">加载Ping节点...</div>
             </div>
-        `;
+        \`;
     }
 }
 
@@ -10581,17 +10581,17 @@ function renderPublicPingNodes(nodes = []) {
         const createdAt = createdAtMs ? new Date(createdAtMs).toLocaleString('zh-CN') : '-';
 
         const row = document.createElement('tr');
-        row.innerHTML = `
+        row.innerHTML = \`
             <td>\${node.name || '-'}</td>
             <td>\${node.target_address || '-'}</td>
             <td>\${node.description || '-'}</td>
             <td>\${createdAt}</td>
-        `;
+        \`;
         tableBody.appendChild(row);
 
         const card = document.createElement('div');
         card.className = 'mobile-site-card';
-        card.innerHTML = `
+        card.innerHTML = \`
             <div class="d-flex justify-content-between align-items-center mb-1">
                 <div>
                     <div class="fw-semibold">\${node.name || '未命名节点'}</div>
@@ -10601,7 +10601,7 @@ function renderPublicPingNodes(nodes = []) {
             </div>
             <div class="text-muted mb-1">\${node.description || '无描述'}</div>
             <small class="text-muted">创建于 \${createdAt}</small>
-        `;
+        \`;
         mobileContainer.appendChild(card);
     });
 }
