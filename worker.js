@@ -8552,6 +8552,40 @@ function getAuthHeaders() {
     return headers;
 }
 
+// Safely parse JSON responses and surface readable errors (expects a cloned response for fallback text)
+async function parseJsonResponse(response, responseClone) {
+    if (!responseClone) {
+        throw new Error('parseJsonResponse requires a cloned response for fallback text');
+    }
+    const rawText = await responseClone.text().catch(() => '');
+    try {
+        return JSON.parse(rawText);
+    } catch (parseError) {
+        const fallbackMessage = rawText || parseError.message || 'Failed to parse response';
+        throw new Error('Failed to parse response (status: ' + response.status + '): ' + fallbackMessage);
+    }
+}
+
+async function extractErrorMessage(responseClone, fallbackMessage) {
+    try {
+        const text = await responseClone.text();
+        if (!text) {
+            return fallbackMessage;
+        }
+        try {
+            const parsed = JSON.parse(text);
+            if (Object.prototype.hasOwnProperty.call(parsed, 'message')) {
+                return parsed.message;
+            }
+            return text || fallbackMessage;
+        } catch {
+            return text;
+        }
+    } catch {
+        return fallbackMessage;
+    }
+}
+
 // ==================== VPS状态变化检测 ====================
 
 // 检测VPS状态变化并发送通知
@@ -8623,27 +8657,24 @@ async function apiRequest(url, options = {}) {
     };
     const hadToken = !!localStorage.getItem('auth_token');
 
-    try {
-        const response = await fetch(url, defaultOptions);
+    const response = await fetch(url, defaultOptions);
+    const responseClone = response.clone();
 
-        // 处理认证失败
-        if (response.status === 401) {
-            localStorage.removeItem('auth_token');
-            if (hadToken && window.location.pathname !== '/login.html') {
-                window.location.href = 'login.html';
-            }
-            throw new Error('认证失败，请重新登录');
+    // 处理认证失败
+    if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        if (hadToken && window.location.pathname !== '/login.html') {
+            window.location.href = 'login.html';
         }
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || \`请求失败 (\${response.status})\`);
-        }
-
-        return await response.json();
-    } catch (error) {
-                throw error;
+        throw new Error('认证失败，请重新登录');
     }
+
+    if (!response.ok) {
+        const errorMessage = await extractErrorMessage(responseClone, '请求失败 (' + response.status + ')');
+        throw new Error(errorMessage);
+    }
+
+    return await parseJsonResponse(response, responseClone);
 }
 
 // 公开API请求函数（用于不需要认证的请求）
@@ -8653,18 +8684,15 @@ async function publicApiRequest(url, options = {}) {
         ...options
     };
 
-    try {
-        const response = await fetch(url, defaultOptions);
+    const response = await fetch(url, defaultOptions);
+    const responseClone = response.clone();
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || \`请求失败 (\${response.status})\`);
-        }
-
-        return await response.json();
-    } catch (error) {
-                throw error;
+    if (!response.ok) {
+        const errorMessage = await extractErrorMessage(responseClone, '请求失败 (' + response.status + ')');
+        throw new Error(errorMessage);
     }
+
+    return await parseJsonResponse(response, responseClone);
 }
 
 // 显示错误消息
