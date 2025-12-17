@@ -10512,7 +10512,7 @@ function normalizeCreatedAtTimestamp(createdAt) {
 }
 
 function renderPublicPingStatusBadge() {
-    return `<span class="${PUBLIC_PING_NODE_STATUS.className}">${PUBLIC_PING_NODE_STATUS.text}</span>`;
+    return `<span class="\${PUBLIC_PING_NODE_STATUS.className}">\${PUBLIC_PING_NODE_STATUS.text}</span>`;
 }
 
 function setPublicPingNodesLoadingState(tableBody, mobileContainer) {
@@ -10582,10 +10582,10 @@ function renderPublicPingNodes(nodes = []) {
 
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${node.name || '-'}</td>
-            <td>${node.target_address || '-'}</td>
-            <td>${node.description || '-'}</td>
-            <td>${createdAt}</td>
+            <td>\${node.name || '-'}</td>
+            <td>\${node.target_address || '-'}</td>
+            <td>\${node.description || '-'}</td>
+            <td>\${createdAt}</td>
         `;
         tableBody.appendChild(row);
 
@@ -10594,13 +10594,13 @@ function renderPublicPingNodes(nodes = []) {
         card.innerHTML = `
             <div class="d-flex justify-content-between align-items-center mb-1">
                 <div>
-                    <div class="fw-semibold">${node.name || '未命名节点'}</div>
-                    <small class="text-muted">${node.target_address || ''}</small>
+                    <div class="fw-semibold">\${node.name || '未命名节点'}</div>
+                    <small class="text-muted">\${node.target_address || ''}</small>
                 </div>
-                ${renderPublicPingStatusBadge()}
+                \${renderPublicPingStatusBadge()}
             </div>
-            <div class="text-muted mb-1">${node.description || '无描述'}</div>
-            <small class="text-muted">创建于 ${createdAt}</small>
+            <div class="text-muted mb-1">\${node.description || '无描述'}</div>
+            <small class="text-muted">创建于 \${createdAt}</small>
         `;
         mobileContainer.appendChild(card);
     });
