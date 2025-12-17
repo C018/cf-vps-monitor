@@ -9845,7 +9845,7 @@ async function loadServerUptimeData() {
             const uptimePromises = serverRows.map(row => {
                 const serverId = row.getAttribute('data-server-id');
                 if (!serverId) return null;
-                return publicApiRequest(`/api/servers/${serverId}/uptime?period=24h`)
+                return publicApiRequest(\`/api/servers/\${serverId}/uptime?period=24h\`)
                     .then(res => ({
                         id: serverId,
                         uptime: res.uptime,
@@ -9853,7 +9853,7 @@ async function loadServerUptimeData() {
                         onlineTime: res.onlineTime
                     }))
                     .catch(error => {
-                        console.warn(`加载服务器 ${serverId} 在线率数据失败:`, getErrorMessage(error));
+                        console.warn(\`加载服务器 \${serverId} 在线率数据失败:\`, getErrorMessage(error));
                         return { id: serverId, error: true };
                     });
             }).filter(Boolean);
@@ -9864,13 +9864,13 @@ async function loadServerUptimeData() {
         // 更新每个服务器的在线率显示
         uptimeData.forEach(server => {
             if (server && server.error) {
-                console.warn(`服务器 ${server.id} 的在线率数据返回错误状态，跳过展示`);
+                console.warn(\`服务器 \${server.id} 的在线率数据返回错误状态，跳过展示\`);
                 return;
             }
             const uptimeCell = document.querySelector(\`.uptime-cell[data-server-id="\${server.id}"]\`);
             let uptimePercentage = Number(server.uptime);
             if (Number.isNaN(uptimePercentage)) {
-                console.warn(`服务器 ${server.id} 的在线率数据无效，跳过展示`);
+                console.warn(\`服务器 \${server.id} 的在线率数据无效，跳过展示\`);
                 return;
             }
             uptimePercentage = Math.min(100, Math.max(0, uptimePercentage));
