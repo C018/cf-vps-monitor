@@ -1355,7 +1355,7 @@ function getSecureCorsHeaders(origin, env) {
   const config = getSecurityConfig(env);
   const allowedOrigins = config.ALLOWED_ORIGINS;
 
-  let allowedOrigin = '*';  // 默认拒绝所有跨域请求
+  let allowedOrigin = null;  // 默认拒绝所有跨域请求
 
   // 只有明确配置了允许的域名才允许跨域
   if (allowedOrigins.length > 0 && origin) {
@@ -1376,11 +1376,10 @@ function getSecureCorsHeaders(origin, env) {
     }
   }
 
-  return {
-    'Access-Control-Allow-Origin': allowedOrigin,
+  const headers = {
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key',
-    'Access-Control-Allow-Credentials': allowedOrigin !== 'null' ? 'true' : 'false',
+    'Access-Control-Allow-Credentials': (allowedOrigin && allowedOrigin !== '*') ? 'true' : 'false',
     'Access-Control-Max-Age': '86400',
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
@@ -1388,6 +1387,12 @@ function getSecureCorsHeaders(origin, env) {
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
   };
+
+  if (allowedOrigin) {
+    headers['Access-Control-Allow-Origin'] = allowedOrigin;
+  }
+
+  return headers;
 }
 
 // ==================== API路由模块 ====================
@@ -1724,6 +1729,14 @@ async function handleServerRoutes(path, method, request, env, corsHeaders) {
       let realtimeEndpoint = null;
       if (realtime_endpoint && realtime_endpoint.trim()) {
         const endpoint = realtime_endpoint.trim();
+        if (!validateInput(endpoint, 'url', 2048)) {
+          return createErrorResponse(
+            'Invalid endpoint URL',
+            '实时监控端点必须是合法的公共HTTP/HTTPS地址',
+            400,
+            corsHeaders
+          );
+        }
         try {
           const url = new URL(endpoint);
           if (url.protocol !== 'http:' && url.protocol !== 'https:') {
@@ -2225,61 +2238,67 @@ async function handleVpsRoutes(path, method, request, env, corsHeaders, ctx) {
   }
  
   // 实时VPS状态查询（ 无需认证） 
-    if (path.startsWith('/api/realtime/') && method === 'GET') {
-      const serverId = path.split('/')[3]; 
-      if (!serverId || serverId === '') {
-        return createErrorResponse('Invalid server ID', '无效的服务器ID', 400, corsHeaders);
+  if (path.startsWith('/api/realtime/') && method === 'GET') {
+    const serverId = path.split('/')[3];
+    if (!serverId || serverId === '') {
+      return createErrorResponse('Invalid server ID', '无效的服务器ID', 400, corsHeaders);
+    }
+
+    // 验证服务器是否存在，并获取实时监控端点配置
+    const serverResult = await env.DB.prepare('SELECT id, name, realtime_endpoint FROM servers WHERE id = ?').bind(serverId).first();
+    if (!serverResult) {
+      return createErrorResponse('Server not found', '服务器不存在', 404, corsHeaders);
+    }
+
+    // 如果配置了实时端点，尝试直接访问VPS
+    if (serverResult.realtime_endpoint) {
+      if (!validateInput(serverResult.realtime_endpoint, 'url', 2048)) {
+        return createErrorResponse('Invalid endpoint URL', '实时监控端点格式非法或指向受限地址', 400, corsHeaders);
       }
+      try {
+        const response = await fetch(serverResult.realtime_endpoint, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'VPS-Monitor/1.0'
+          },
+          signal: AbortSignal.timeout(5000) // 5秒超时
+        });
 
-      // 验证服务器是否存在，并获取实时监控端点配置
-      const serverResult = await env.DB.prepare('SELECT id, name, realtime_endpoint FROM servers WHERE id = ?').bind(serverId).first();
-      if (!serverResult) {
-        return createErrorResponse('Server not found', '服务器不存在', 404, corsHeaders);
-      } 
+        const data = await response.json().catch(() => null);
+        const parsedData = data?.data ?? data;
 
-	// 如果配置了实时端点，尝试直接访问VPS
-	if (serverResult.realtime_endpoint) {
-	
-		try {
-		  const response = await fetch(serverResult.realtime_endpoint, {
-			method: 'GET',
-			headers: {
-			  'Accept': 'application/json',
-			  'User-Agent': 'VPS-Monitor/1.0'
-			},
-			signal: AbortSignal.timeout(5000) // 5秒超时
-		  });
+        if (response.ok && parsedData !== undefined && parsedData !== null) {
+          return createApiResponse({
+            success: true,
+            source: 'real',
+            data: parsedData
+          }, 200, corsHeaders);
+        }
 
-  return createApiResponse({
-				success: true,
-				source: 'real',
-				data: await response.json()
-			  }, 200, corsHeaders);
-		  if (response.ok) {
-			const data = await response.json();
-			if (data.success && data.data) {
-			  return createApiResponse({
-				success: true,
-				source: 'real',
-				data: data.data
-			  }, 200, corsHeaders);
-			}
-		  }
-		} catch (fetchError) { 
-		return createApiResponse({
-				success: false,
-				source: 'real',
-				data: 'vps接口数据获取失败'
-			  }, 200, corsHeaders); 
-		}         
-	}  
-	else{
-		return createApiResponse({
-			success: false,
-			source: 'real',
-			data: '未配置实时监控api'
-		  }, 200, corsHeaders);
-	}
+        const responsePayload = (parsedData === undefined || parsedData === null)
+          ? 'vps接口数据获取失败'
+          : parsedData;
+        const statusCode = response.status >= 100 ? response.status : 502;
+        return createApiResponse({
+          success: false,
+          source: 'real',
+          data: responsePayload
+        }, statusCode, corsHeaders);
+      } catch (fetchError) {
+        return createApiResponse({
+          success: false,
+          source: 'real',
+          data: 'vps接口数据获取失败'
+        }, 502, corsHeaders);
+      }
+    } else {
+      return createApiResponse({
+        success: false,
+        source: 'real',
+        data: '未配置实时监控api'
+      }, 200, corsHeaders);
+    }
   }
 
   // VPS状态查询（公开，无需认证）
