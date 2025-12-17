@@ -2759,7 +2759,7 @@ async function handleApiRequest(request, env, ctx) {
         SELECT timestamp, status
         FROM vps_status_history
         WHERE server_id = ? AND timestamp >= ?
-        ORDER BY timestamp DESC
+        ORDER BY timestamp ASC
       `).bind(serverId, startTime).all();
       
       // 分析断开时间段
