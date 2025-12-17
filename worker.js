@@ -8554,14 +8554,15 @@ function getAuthHeaders() {
 
 // Safely parse JSON responses and surface readable errors (expects a cloned response for fallback text)
 async function parseJsonResponse(response, responseClone) {
+    if (!responseClone) {
+        throw new Error('parseJsonResponse requires a cloned response for fallback text');
+    }
     try {
         return await response.json();
     } catch (parseError) {
-        if (!responseClone) {
-            throw parseError;
-        }
         const text = await responseClone.text().catch(() => '');
-        throw new Error(text || 'Failed to parse response');
+        const fallbackMessage = text || parseError.message || 'Failed to parse response';
+        throw new Error('Failed to parse response (status: ' + response.status + '): ' + fallbackMessage);
     }
 }
 
