@@ -1355,7 +1355,7 @@ function getSecureCorsHeaders(origin, env) {
   const config = getSecurityConfig(env);
   const allowedOrigins = config.ALLOWED_ORIGINS;
 
-  let allowedOrigin = '*';  // 默认拒绝所有跨域请求
+  let allowedOrigin = 'null';  // 默认拒绝所有跨域请求
 
   // 只有明确配置了允许的域名才允许跨域
   if (allowedOrigins.length > 0 && origin) {
@@ -1380,7 +1380,7 @@ function getSecureCorsHeaders(origin, env) {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key',
-    'Access-Control-Allow-Credentials': allowedOrigin !== 'null' ? 'true' : 'false',
+    'Access-Control-Allow-Credentials': (allowedOrigin !== 'null' && allowedOrigin !== '*') ? 'true' : 'false',
     'Access-Control-Max-Age': '86400',
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
@@ -1724,6 +1724,14 @@ async function handleServerRoutes(path, method, request, env, corsHeaders) {
       let realtimeEndpoint = null;
       if (realtime_endpoint && realtime_endpoint.trim()) {
         const endpoint = realtime_endpoint.trim();
+        if (!validateInput(endpoint, 'url', 2048)) {
+          return createErrorResponse(
+            'Invalid endpoint URL',
+            '实时监控端点必须是合法的公共HTTP/HTTPS地址',
+            400,
+            corsHeaders
+          );
+        }
         try {
           const url = new URL(endpoint);
           if (url.protocol !== 'http:' && url.protocol !== 'https:') {
@@ -2239,7 +2247,9 @@ async function handleVpsRoutes(path, method, request, env, corsHeaders, ctx) {
 
 	// 如果配置了实时端点，尝试直接访问VPS
 	if (serverResult.realtime_endpoint) {
-	
+	    if (!validateInput(serverResult.realtime_endpoint, 'url', 2048)) {
+	      return createErrorResponse('Invalid endpoint URL', '实时监控端点格式非法或指向受限地址', 400, corsHeaders);
+	    }
 		try {
 		  const response = await fetch(serverResult.realtime_endpoint, {
 			method: 'GET',
