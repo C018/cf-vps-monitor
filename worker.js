@@ -1308,6 +1308,7 @@ async function isDefaultPasswordActive(db) {
 
     return await verifyPassword(DEFAULT_ADMIN_CONFIG.PASSWORD, admin.password_hash);
   } catch (error) {
+    console.error('Failed to check default password status:', error);
     return false;
   }
 }
@@ -11258,7 +11259,7 @@ async function loadDefaultCredentials() {
     try {
         const response = await fetch('/api/auth/default-credentials');
         if (!response.ok) {
-            throw new Error('Failed to load status');
+            throw new Error(`Failed to load status: ${response.status}`);
         }
 
         const data = await response.json();
@@ -11268,7 +11269,7 @@ async function loadDefaultCredentials() {
             credentialsInfo.textContent = '默认密码已修改，请使用管理员设置的账号密码登录。';
         }
     } catch (error) {
-        credentialsInfo.textContent = '请使用管理员提供的账号密码登录。';
+        credentialsInfo.textContent = '无法获取默认密码状态，请检查网络或使用管理员提供的账号密码登录。';
     }
 }
 
