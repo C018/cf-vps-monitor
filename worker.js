@@ -8375,6 +8375,7 @@ async function apiRequest(url, options = {}) {
         headers: getAuthHeaders(),
         ...options
     };
+    const hadToken = !!localStorage.getItem('auth_token');
 
     try {
         const response = await fetch(url, defaultOptions);
@@ -8382,7 +8383,7 @@ async function apiRequest(url, options = {}) {
         // 处理认证失败
         if (response.status === 401) {
             localStorage.removeItem('auth_token');
-            if (window.location.pathname !== '/login.html') {
+            if (hadToken && window.location.pathname !== '/login.html') {
                 window.location.href = 'login.html';
             }
             throw new Error('认证失败，请重新登录');
