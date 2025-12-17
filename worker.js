@@ -10512,7 +10512,7 @@ function normalizeCreatedAtTimestamp(createdAt) {
 }
 
 function renderPublicPingStatusBadge() {
-    return `<span class="\${PUBLIC_PING_NODE_STATUS.className}">\${PUBLIC_PING_NODE_STATUS.text}</span>`;
+    return \`<span class="\${PUBLIC_PING_NODE_STATUS.className}">\${PUBLIC_PING_NODE_STATUS.text}</span>\`;
 }
 
 function setPublicPingNodesLoadingState(tableBody, mobileContainer) {
