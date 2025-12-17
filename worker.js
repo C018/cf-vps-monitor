@@ -8588,6 +8588,13 @@ function showError(message, containerId = null) {
     }
 }
 
+// 统一错误信息格式化
+function getErrorMessage(error) {
+    if (!error) return 'Unknown error';
+    if (typeof error === 'string') return error;
+    return error.message || error.toString() || 'Unknown error';
+}
+
 // 显示成功消息
 function showSuccess(message, containerId = null) {
         if (containerId) {
@@ -9710,7 +9717,7 @@ async function loadServerUptimeData() {
                 const data = await apiRequest('/api/admin/servers/uptime?period=24h');
                 uptimeData = data.servers || [];
             } catch (error) {
-                console.warn('管理员在线率接口不可用，尝试公共接口获取：', error.message || error);
+                console.warn('管理员在线率接口不可用，尝试公共接口获取：', getErrorMessage(error));
             }
         }
 
@@ -9728,7 +9735,7 @@ async function loadServerUptimeData() {
                         onlineTime: res.onlineTime
                     }))
                     .catch(error => {
-                        console.warn(`加载服务器 ${serverId} 在线率数据失败:`, error.message || error);
+                        console.warn(`加载服务器 ${serverId} 在线率数据失败:`, getErrorMessage(error));
                         return { id: serverId, error: true };
                     });
             }).filter(Boolean);
@@ -9738,9 +9745,17 @@ async function loadServerUptimeData() {
         
         // 更新每个服务器的在线率显示
         uptimeData.forEach(server => {
+            if (server && server.error) {
+                console.warn(`服务器 ${server.id} 的在线率数据返回错误状态，跳过展示`);
+                return;
+            }
             const uptimeCell = document.querySelector(\`.uptime-cell[data-server-id="\${server.id}"]\`);
-            const uptimePercentage = server.uptime;
-            if (typeof uptimePercentage !== 'number') return;
+            let uptimePercentage = Number(server.uptime);
+            if (Number.isNaN(uptimePercentage)) {
+                console.warn(`服务器 ${server.id} 的在线率数据无效，跳过展示`);
+                return;
+            }
+            uptimePercentage = Math.min(100, Math.max(0, uptimePercentage));
 
             let uptimeClass = 'text-success';
             if (uptimePercentage < 95) uptimeClass = 'text-warning';
@@ -9759,11 +9774,11 @@ async function loadServerUptimeData() {
             // 更新移动端显示（使用默认时间段）
             const mobileUptimeCell = document.getElementById(\`mobile-uptime-\${server.id}\`);
             if (mobileUptimeCell) {
+                mobileUptimeCell.style.textDecoration = 'underline';
                 const mobileSelect = document.getElementById(\`mobile-period-\${server.id}\`);
                 const period = mobileSelect ? mobileSelect.value : '24h';
                 // 初始化移动端在线率显示
                 updateMobileUptimeDisplay(server.id, period);
-                mobileUptimeCell.style.textDecoration = 'underline';
             }
         });
     } catch (error) {
