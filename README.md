@@ -1,7 +1,7 @@
 # cf-vps-monitor
 [简体中文](https://github.com/C018/cf-vps-monitor/blob/main/README.md) | [English](https://github.com/C018/cf-vps-monitor/blob/main/README-EN.md)
 ## 用cloudflare worker搭建的vps探针 + 网站检测面板。
-面板示例：https://vps-monitor.abo-vendor289.workers.dev/
+面板示例：https://tz.okr.pub/
 
 PC端前台：
 
