@@ -5235,11 +5235,13 @@ function getIndexHtml() {
             --ios-surface: rgba(255, 255, 255, 0.85);
             --ios-surface-dark: rgba(28, 32, 36, 0.88);
             --ios-border: rgba(255, 255, 255, 0.45);
-            --ios-shadow: 0 18px 42px rgba(15, 23, 42, 0.14);
+            --ios-shadow: 0 20px 50px rgba(15, 23, 42, 0.16);
+            --ios-gradient: radial-gradient(120% 120% at 12% 18%, #d9e9ff 0%, #f5f8ff 46%, #dfe6f5 100%);
+            --ios-accent: #0a84ff;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
-            background: radial-gradient(120% 120% at 10% 20%, #e0f2fe 0%, #f8fafc 45%, #e2e8f0 100%);
+            background: var(--ios-gradient);
             color: #0f172a;
             background-attachment: fixed;
         }
@@ -5249,6 +5251,31 @@ function getIndexHtml() {
             box-shadow: var(--ios-shadow);
             backdrop-filter: saturate(180%) blur(16px);
             background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(245, 248, 255, 0.92));
+        }
+        .navbar {
+            background: linear-gradient(135deg, rgba(10, 132, 255, 0.95), rgba(88, 86, 214, 0.9)) !important;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            box-shadow: var(--ios-shadow);
+            backdrop-filter: saturate(180%) blur(16px);
+        }
+        .navbar .nav-link, .navbar .navbar-brand, .navbar .btn {
+            color: #f8fbff !important;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+        }
+        .navbar .btn-outline-light {
+            background: rgba(255, 255, 255, 0.16);
+            border-color: rgba(255, 255, 255, 0.45);
+        }
+        .table {
+            border-radius: 16px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: var(--ios-shadow);
+        }
+        [data-bs-theme="dark"] .table {
+            background: rgba(34, 39, 46, 0.8);
         }
         [data-bs-theme="dark"] .card,
         [data-bs-theme="dark"] .modal-content {
@@ -5266,7 +5293,7 @@ function getIndexHtml() {
             cursor: pointer; /* Indicate clickable rows */
         }
         .server-details-row {
-            /* display: none; /* Initially hidden - controlled by JS */ */
+            /* Initially hidden - controlled by JS */
         }
         .server-details-row td {
             padding: 1rem;
@@ -5414,7 +5441,9 @@ function getIndexHtml() {
             color: #add8e6; /* Lighter blue on hover */
         }
         [data-bs-theme="dark"] .navbar-dark {
-            background-color: #343a40 !important; /* Darker navbar */
+            background: linear-gradient(135deg, rgba(34, 39, 46, 0.95), rgba(24, 29, 35, 0.92)) !important; /* Darker navbar */
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
         }
         [data-bs-theme="dark"] .table {
             color: #ffffff; /* White table text */
@@ -5857,11 +5886,13 @@ function getLoginHtml() {
             --ios-surface: rgba(255, 255, 255, 0.85);
             --ios-surface-dark: rgba(28, 32, 36, 0.88);
             --ios-border: rgba(255, 255, 255, 0.45);
-            --ios-shadow: 0 18px 42px rgba(15, 23, 42, 0.14);
+            --ios-shadow: 0 20px 50px rgba(15, 23, 42, 0.16);
+            --ios-gradient: radial-gradient(120% 120% at 12% 18%, #d9e9ff 0%, #f5f8ff 46%, #dfe6f5 100%);
+            --ios-accent: #0a84ff;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
-            background: radial-gradient(120% 120% at 10% 20%, #e0f2fe 0%, #f8fafc 45%, #e2e8f0 100%);
+            background: var(--ios-gradient);
             color: #0f172a;
             background-attachment: fixed;
         }
@@ -5871,6 +5902,31 @@ function getLoginHtml() {
             box-shadow: var(--ios-shadow);
             backdrop-filter: saturate(180%) blur(16px);
             background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(245, 248, 255, 0.92));
+        }
+        .navbar {
+            background: linear-gradient(135deg, rgba(10, 132, 255, 0.95), rgba(88, 86, 214, 0.9)) !important;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            box-shadow: var(--ios-shadow);
+            backdrop-filter: saturate(180%) blur(16px);
+        }
+        .navbar .nav-link, .navbar .navbar-brand, .navbar .btn {
+            color: #f8fbff !important;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+        }
+        .navbar .btn-outline-light {
+            background: rgba(255, 255, 255, 0.16);
+            border-color: rgba(255, 255, 255, 0.45);
+        }
+        .table {
+            border-radius: 16px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: var(--ios-shadow);
+        }
+        [data-bs-theme="dark"] .table {
+            background: rgba(34, 39, 46, 0.8);
         }
         [data-bs-theme="dark"] .card,
         [data-bs-theme="dark"] .modal-content {
@@ -5888,7 +5944,7 @@ function getLoginHtml() {
             cursor: pointer; /* Indicate clickable rows */
         }
         .server-details-row {
-            /* display: none; /* Initially hidden - controlled by JS */ */
+            /* Initially hidden - controlled by JS */
         }
         .server-details-row td {
             padding: 1rem;
@@ -5970,7 +6026,9 @@ function getLoginHtml() {
             color: #add8e6; /* Lighter blue on hover */
         }
         [data-bs-theme="dark"] .navbar-dark {
-            background-color: #343a40 !important; /* Darker navbar */
+            background: linear-gradient(135deg, rgba(34, 39, 46, 0.95), rgba(24, 29, 35, 0.92)) !important; /* Darker navbar */
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
         }
         [data-bs-theme="dark"] .table {
             color: #ffffff; /* White table text */
@@ -6173,11 +6231,13 @@ function getAdminHtml() {
             --ios-surface: rgba(255, 255, 255, 0.85);
             --ios-surface-dark: rgba(28, 32, 36, 0.88);
             --ios-border: rgba(255, 255, 255, 0.45);
-            --ios-shadow: 0 18px 42px rgba(15, 23, 42, 0.14);
+            --ios-shadow: 0 20px 50px rgba(15, 23, 42, 0.16);
+            --ios-gradient: radial-gradient(120% 120% at 12% 18%, #d9e9ff 0%, #f5f8ff 46%, #dfe6f5 100%);
+            --ios-accent: #0a84ff;
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
-            background: radial-gradient(120% 120% at 10% 20%, #e0f2fe 0%, #f8fafc 45%, #e2e8f0 100%);
+            background: var(--ios-gradient);
             color: #0f172a;
             background-attachment: fixed;
         }
@@ -6187,6 +6247,31 @@ function getAdminHtml() {
             box-shadow: var(--ios-shadow);
             backdrop-filter: saturate(180%) blur(16px);
             background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(245, 248, 255, 0.92));
+        }
+        .navbar {
+            background: linear-gradient(135deg, rgba(10, 132, 255, 0.95), rgba(88, 86, 214, 0.9)) !important;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            box-shadow: var(--ios-shadow);
+            backdrop-filter: saturate(180%) blur(16px);
+        }
+        .navbar .nav-link, .navbar .navbar-brand, .navbar .btn {
+            color: #f8fbff !important;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+        }
+        .navbar .btn-outline-light {
+            background: rgba(255, 255, 255, 0.16);
+            border-color: rgba(255, 255, 255, 0.45);
+        }
+        .table {
+            border-radius: 16px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: var(--ios-shadow);
+        }
+        [data-bs-theme="dark"] .table {
+            background: rgba(34, 39, 46, 0.8);
         }
         [data-bs-theme="dark"] .card,
         [data-bs-theme="dark"] .modal-content {
@@ -6199,6 +6284,11 @@ function getAdminHtml() {
         }
         .form-control, .form-select {
             border-radius: 12px;
+        }
+        [data-bs-theme="dark"] .navbar-dark {
+            background: linear-gradient(135deg, rgba(34, 39, 46, 0.95), rgba(24, 29, 35, 0.92)) !important; /* Darker navbar */
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
         }
     </style>
 </head>
