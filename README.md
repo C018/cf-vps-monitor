@@ -168,6 +168,20 @@ curl -O https://raw.githubusercontent.com/C018/cf-vps-monitor/main/cf-vps-monito
 *   **错误处理:** 如果面板或 Agent 遇到问题，可以检查 Worker 的日志（在 Cloudflare 控制面板 Worker 页面）和 Agent 的日志。
 *   以上所有内容和代码均为AI生成，出现问题请直接拿着代码找AI吧。
 
+## 常见问题排查
+
+### 错误：Uncaught SyntaxError: Unexpected token 'class'
+
+如果在部署 Worker 后看到此错误，说明 Worker 的兼容性日期设置不正确。请按以下步骤修复：
+
+1. 进入 Cloudflare 控制面板中的 Worker 管理页面
+2. 点击 `设置` 标签
+3. 找到 `兼容性日期` 选项
+4. 将日期设置为 `2022-01-01` 或更新的日期
+5. 点击 `保存并部署`
+
+兼容性日期控制 Worker 运行时支持的 JavaScript 特性。本项目使用 ES6+ 特性（如类、async/await、export default），需要较新的兼容性日期才能正常运行。
+
 ### 诚邀赞助🤣：
 
 [![Powered by cloudflare](https://cf-assets.www.cloudflare.com/slt3lc6tev37/6EYsdkdfBcHtgPmgp3YtkD/0b203affd2053988264b9253b13de6b3/logo-thumbnail.png)](https://www.cloudflare.com/ "Powered by cloudflare - Free workers for Open Source")

@@ -169,6 +169,20 @@ The installation script itself also provides management functions:
 * **Error Handling:** If the panel or Agent encounters issues, you can check the Worker logs (in the Cloudflare dashboard Worker page) and Agent logs.
 * All content and code above are AI-generated. If you encounter problems, please take the code directly to AI for help.
 
+## Troubleshooting
+
+### Error: Uncaught SyntaxError: Unexpected token 'class'
+
+If you see this error after deploying the Worker, it means the Worker's compatibility date is not set correctly. Follow these steps to fix it:
+
+1. Go to your Worker management page in the Cloudflare dashboard
+2. Click the `Settings` tab
+3. Find the `Compatibility Date` option
+4. Set the date to `2022-01-01` or newer
+5. Click `Save and Deploy`
+
+The compatibility date controls which JavaScript features are supported by the Worker runtime. This project uses ES6+ features (such as classes, async/await, export default), which require a newer compatibility date to run properly.
+
 ### Sponsorship Welcome🤣:
 
 [![Powered by cloudflare](https://cf-assets.www.cloudflare.com/slt3lc6tev37/6EYsdkdfBcHtgPmgp3YtkD/0b203affd2053988264b9253b13de6b3/logo-thumbnail.png)](https://www.cloudflare.com/ "Powered by cloudflare - Free workers for Open Source")
