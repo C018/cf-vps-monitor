@@ -1,5 +1,5 @@
 # cf-vps-monitor
-[简体中文](https://github.com/kadidalax/cf-vps-monitor/blob/main/README.md) | [English](https://github.com/kadidalax/cf-vps-monitor/blob/main/README-EN.md)
+[简体中文](https://github.com/C018/cf-vps-monitor/blob/main/README.md) | [English](https://github.com/C018/cf-vps-monitor/blob/main/README-EN.md)
 ## 用cloudflare worker搭建的vps探针 + 网站检测面板。
 面板示例：https://vps-monitor.abo-vendor289.workers.dev/
 
@@ -16,7 +16,7 @@ PC端前台：
 
 后台：
 
-![image](https://github.com/kadidalax/cf-vps-monitor/blob/main/pic/back.jpg)
+![image](https://github.com/C018/cf-vps-monitor/blob/main/pic/back.jpg)
 
 
 
@@ -112,15 +112,15 @@ Agent 是一个需要在你的 VPS 上运行的脚本，用于收集状态信息
 有两种方式安装Agent脚本：
 
 第一种是直接从后台复制带有参数的命令一键安装（推荐）
-![image](https://github.com/kadidalax/cf-vps-monitor/blob/main/pic/setting.jpg)
+![image](https://github.com/C018/cf-vps-monitor/blob/main/pic/setting.jpg)
 
 第二种是：下载脚本并运行：
 ```
-wget -O cf-vps-monitor.sh https://raw.githubusercontent.com/kadidalax/cf-vps-monitor/main/cf-vps-monitor.sh && chmod +x cf-vps-monitor.sh && ./cf-vps-monitor.sh
+wget -O cf-vps-monitor.sh https://raw.githubusercontent.com/C018/cf-vps-monitor/main/cf-vps-monitor.sh && chmod +x cf-vps-monitor.sh && ./cf-vps-monitor.sh
 ```
 或者下载脚本并运行：
 ```
-curl -O https://raw.githubusercontent.com/kadidalax/cf-vps-monitor/main/cf-vps-monitor.sh && chmod +x cf-vps-monitor.sh && ./cf-vps-monitor.sh
+curl -O https://raw.githubusercontent.com/C018/cf-vps-monitor/main/cf-vps-monitor.sh && chmod +x cf-vps-monitor.sh && ./cf-vps-monitor.sh
 ```
 *   安装需要  `服务器ID` `API密钥` 和你的 `worker网址`
 *   可以在后台点击 `查看密钥` 来获取上述三个参数
