@@ -3,7 +3,7 @@
 
 ## VPS monitoring probe + website detection panel built with Cloudflare Worker.
 
-Panel Demo: https://vps-monitor.abo-vendor289.workers.dev/
+Panel Demo: https://tz.okr.pub/
 
 PC Frontend:
  
@@ -171,4 +171,5 @@ The installation script itself also provides management functions:
 ### Sponsorship Welcome🤣:
 
 [![Powered by DartNode](https://dartnode.com/branding/DN-Open-Source-sm.png)](https://dartnode.com "Powered by DartNode - Free VPS for Open Source")
+
 
