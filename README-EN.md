@@ -1,5 +1,5 @@
 # cf-vps-monitor
-[简体中文](https://github.com/kadidalax/cf-vps-monitor/blob/main/README.md) | [English](https://github.com/kadidalax/cf-vps-monitor/blob/main/README-EN.md)
+[简体中文](https://github.com/C018/cf-vps-monitor/blob/main/README.md) | [English](https://github.com/C018/cf-vps-monitor/blob/main/README-EN.md)
 
 ## VPS monitoring probe + website detection panel built with Cloudflare Worker.
 
@@ -14,11 +14,11 @@ PC Frontend:
 ![image](https://github.com/fanbang/cf-vps-monitor/blob/main/pic/cpu.jpg)
  Mobile Frontend:
 
-![image](https://github.com/kadidalax/cf-vps-monitor/blob/main/pic/newmobile.jpg)
+![image](https://github.com/C018/cf-vps-monitor/blob/main/pic/newmobile.jpg)
 
 Backend:
 
-![image](https://github.com/kadidalax/cf-vps-monitor/blob/main/pic/back.jpg)
+![image](https://github.com/C018/cf-vps-monitor/blob/main/pic/back.jpg)
 
 # VPS Monitoring Panel (Cloudflare Worker + D1) - Deployment Guide
 
@@ -113,15 +113,15 @@ The Agent is a script that needs to run on your VPS to collect status informatio
 There are two ways to install the Agent script:
 
 First method is to copy the command with parameters directly from the backend for one-click installation (recommended):
-![image](https://github.com/kadidalax/cf-vps-monitor/blob/main/pic/setting.jpg)
+![image](https://github.com/C018/cf-vps-monitor/blob/main/pic/setting.jpg)
 
 Second method: Download and run the script:
 ```
-wget -O cf-vps-monitor.sh https://raw.githubusercontent.com/kadidalax/cf-vps-monitor/main/cf-vps-monitor.sh && chmod +x cf-vps-monitor.sh && ./cf-vps-monitor.sh
+wget -O cf-vps-monitor.sh https://raw.githubusercontent.com/C018/cf-vps-monitor/main/cf-vps-monitor.sh && chmod +x cf-vps-monitor.sh && ./cf-vps-monitor.sh
 ```
 Or download and run the script:
 ```
-curl -O https://raw.githubusercontent.com/kadidalax/cf-vps-monitor/main/cf-vps-monitor.sh && chmod +x cf-vps-monitor.sh && ./cf-vps-monitor.sh
+curl -O https://raw.githubusercontent.com/C018/cf-vps-monitor/main/cf-vps-monitor.sh && chmod +x cf-vps-monitor.sh && ./cf-vps-monitor.sh
 ```
 * Installation requires `Server ID`, `API Key`, and your `Worker URL`
 * You can click `View Key` in the backend to get these three parameters
