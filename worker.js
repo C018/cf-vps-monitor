@@ -2885,9 +2885,10 @@ async function handleApiRequest(request, env, ctx) {
           }
         }
         
+        const displayTime = pointEndTime; // 使用区间结束时间与“现在”对齐
         chartDataPoints.push({
           timestamp: pointStartTime,
-          timeFormatted: pointStartTime ,
+          timeFormatted: displayTime ,
           status: isOnline ? 'online' : 'offline'
         });
       }
@@ -5229,6 +5230,36 @@ function getIndexHtml() {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha512-oAvZuuYVzkcTc2dH5z1ZJup5OmSQ000qlfRvuoTTiyTBjwX1faoyearj8KdMq0LgsBTHMrRuMek7s+CxF8yE+w==" crossorigin="anonymous">
     <link href="/css/style.css" rel="stylesheet">
     <style>
+        /* iOS inspired surface styling */
+        :root {
+            --ios-surface: rgba(255, 255, 255, 0.88);
+            --ios-surface-dark: rgba(38, 43, 48, 0.9);
+            --ios-border: rgba(0, 0, 0, 0.06);
+            --ios-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+        }
+        .card, .modal-content {
+            border-radius: 16px;
+            border: 1px solid var(--ios-border);
+            box-shadow: var(--ios-shadow);
+            backdrop-filter: blur(10px);
+            background-color: var(--ios-surface);
+        }
+        [data-bs-theme="dark"] .card,
+        [data-bs-theme="dark"] .modal-content {
+            background-color: var(--ios-surface-dark);
+            border-color: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+        }
+        .btn {
+            border-radius: 999px;
+        }
+        .form-control, .form-select {
+            border-radius: 12px;
+        }
         .server-row {
             cursor: pointer; /* Indicate clickable rows */
         }
@@ -5819,6 +5850,36 @@ function getLoginHtml() {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha512-oAvZuuYVzkcTc2dH5z1ZJup5OmSQ000qlfRvuoTTiyTBjwX1faoyearj8KdMq0LgsBTHMrRuMek7s+CxF8yE+w==" crossorigin="anonymous">
     <link href="/css/style.css" rel="stylesheet">
     <style>
+        /* iOS inspired surface styling */
+        :root {
+            --ios-surface: rgba(255, 255, 255, 0.88);
+            --ios-surface-dark: rgba(38, 43, 48, 0.9);
+            --ios-border: rgba(0, 0, 0, 0.06);
+            --ios-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+        }
+        .card, .modal-content {
+            border-radius: 16px;
+            border: 1px solid var(--ios-border);
+            box-shadow: var(--ios-shadow);
+            backdrop-filter: blur(10px);
+            background-color: var(--ios-surface);
+        }
+        [data-bs-theme="dark"] .card,
+        [data-bs-theme="dark"] .modal-content {
+            background-color: var(--ios-surface-dark);
+            border-color: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+        }
+        .btn {
+            border-radius: 999px;
+        }
+        .form-control, .form-select {
+            border-radius: 12px;
+        }
         .server-row {
             cursor: pointer; /* Indicate clickable rows */
         }
@@ -6102,6 +6163,38 @@ function getAdminHtml() {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" integrity="sha512-b2QcS5SsA8tZodcDtGRELiGv5SaKSk1vDHDaQRda0htPYWZ6046lr3kJ5bAAQdpV2mmA/4v0wQF9MyU6/pDIAg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.1/font/bootstrap-icons.min.css" rel="stylesheet" integrity="sha512-oAvZuuYVzkcTc2dH5z1ZJup5OmSQ000qlfRvuoTTiyTBjwX1faoyearj8KdMq0LgsBTHMrRuMek7s+CxF8yE+w==" crossorigin="anonymous">
     <link href="/css/style.css" rel="stylesheet">
+    <style>
+        /* iOS inspired surface styling */
+        :root {
+            --ios-surface: rgba(255, 255, 255, 0.88);
+            --ios-surface-dark: rgba(38, 43, 48, 0.9);
+            --ios-border: rgba(0, 0, 0, 0.06);
+            --ios-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+        }
+        .card, .modal-content {
+            border-radius: 16px;
+            border: 1px solid var(--ios-border);
+            box-shadow: var(--ios-shadow);
+            backdrop-filter: blur(10px);
+            background-color: var(--ios-surface);
+        }
+        [data-bs-theme="dark"] .card,
+        [data-bs-theme="dark"] .modal-content {
+            background-color: var(--ios-surface-dark);
+            border-color: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+        }
+        .btn {
+            border-radius: 999px;
+        }
+        .form-control, .form-select {
+            border-radius: 12px;
+        }
+    </style>
 </head>
 <body>
     <!-- Toast容器 -->
@@ -9880,7 +9973,7 @@ function renderUptimeHistory(data) {
                 <p class="text-muted mb-1">统计时间段: \${data.period}</p>
                 <p class="text-muted">开始时间: \${starttime}</p>
             </div>
-            <div class="col-md-7">
+            <div class="col-md-8">
                 <div class="row text-center">
                     <div class="col-3">
                         <div class="border rounded p-2">
@@ -11610,6 +11703,8 @@ let currentSiteId = null; // For site deletion
 let serverList = [];
 let siteList = []; // For monitored sites
 let hasAddedNewServer = false; // 标记是否添加了新服务器
+let currentPingNodeId = null;
+let pingNodeList = [];
 
 // 页面加载完成后执行
 document.addEventListener('DOMContentLoaded', async function() {
@@ -11632,6 +11727,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     loadServerList();
     // 加载监控网站列表
     loadSiteList();
+    // 加载Ping节点列表
+    refreshPingNodes();
     // 加载Telegram设置
     loadTelegramSettings();
     // 加载背景设置
@@ -11867,6 +11964,16 @@ function initEventListeners() {
      document.getElementById('confirmDeleteSiteBtn').addEventListener('click', function() {
         if (currentSiteId) {
             deleteSite(currentSiteId);
+        }
+    });
+
+    // Ping节点事件
+    document.getElementById('savePingNodeBtn').addEventListener('click', function() {
+        savePingNode();
+    });
+    document.getElementById('confirmDeletePingNodeBtn').addEventListener('click', function() {
+        if (currentPingNodeId) {
+            deletePingNode(currentPingNodeId);
         }
     });
 
@@ -13746,6 +13853,210 @@ async function toggleSiteVisibility(siteId, isPublic) {
         }
 
         showToast('danger', '切换显示状态失败: ' + error.message);
+    }
+}
+
+// --- Ping Node Management ---
+
+async function refreshPingNodes() {
+    const tableBody = document.getElementById('pingNodesTable');
+    const mobileContainer = document.getElementById('mobilePingNodeContainer');
+    const emptyState = document.getElementById('noPingNodes');
+
+    if (tableBody) {
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">加载中...</td></tr>';
+    }
+    if (mobileContainer) {
+        mobileContainer.innerHTML = '<div class="text-center p-3"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">加载中...</span></div></div>';
+    }
+
+    try {
+        const data = await apiRequest('/api/admin/ping-nodes');
+        pingNodeList = data.ping_nodes || [];
+        renderPingNodes(pingNodeList);
+        if (emptyState) {
+            if (pingNodeList.length === 0) {
+                emptyState.classList.remove('d-none');
+            } else {
+                emptyState.classList.add('d-none');
+            }
+        }
+    } catch (error) {
+        if (emptyState) {
+            emptyState.classList.remove('d-none');
+        }
+        if (tableBody) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-3">加载Ping节点失败</td></tr>';
+        }
+        if (mobileContainer) {
+            mobileContainer.innerHTML = '<div class="text-center text-danger p-3">加载失败</div>';
+        }
+        showToast('danger', '加载Ping节点失败: ' + error.message);
+    }
+}
+
+function renderPingNodes(nodes = []) {
+    const tableBody = document.getElementById('pingNodesTable');
+    const mobileContainer = document.getElementById('mobilePingNodeContainer');
+    const emptyState = document.getElementById('noPingNodes');
+    if (!tableBody || !mobileContainer || !emptyState) return;
+
+    tableBody.innerHTML = '';
+    mobileContainer.innerHTML = '';
+
+    if (!nodes.length) {
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">暂无Ping节点</td></tr>';
+        mobileContainer.innerHTML = '<div class="text-center text-muted p-3">暂无Ping节点</div>';
+        emptyState.classList.remove('d-none');
+        return;
+    }
+
+    emptyState.classList.add('d-none');
+
+    nodes.forEach(node => {
+        const createdAt = node.created_at ? new Date(node.created_at * 1000).toLocaleString() : '-';
+        const statusBadge = node.enabled ? '<span class="badge bg-success">启用</span>' : '<span class="badge bg-secondary">禁用</span>';
+
+        const row = document.createElement('tr');
+        row.innerHTML = \`
+            <td>\${node.name || '-'}</td>
+            <td>\${node.target_address || '-'}</td>
+            <td>\${node.description || '-'}</td>
+            <td>\${statusBadge}</td>
+            <td>\${createdAt}</td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary edit-ping-node" data-id="\${node.id}">
+                        <i class="bi bi-pencil"></i> 编辑
+                    </button>
+                    <button class="btn btn-outline-danger delete-ping-node" data-id="\${node.id}" data-name="\${node.name || node.target_address}">
+                        <i class="bi bi-trash"></i> 删除
+                    </button>
+                </div>
+            </td>
+        \`;
+        tableBody.appendChild(row);
+
+        const card = document.createElement('div');
+        card.className = 'mobile-site-card';
+        card.innerHTML = \`
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <div class="fw-semibold">\${node.name || '未命名节点'}</div>
+                    <small class="text-muted">\${node.target_address || ''}</small>
+                </div>
+                \${statusBadge}
+            </div>
+            <div class="text-muted mb-2">\${node.description || '无描述'}</div>
+            <div class="d-flex justify-content-between align-items-center">
+                <small class="text-muted">创建于 \${createdAt}</small>
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary edit-ping-node" data-id="\${node.id}">编辑</button>
+                    <button class="btn btn-outline-danger delete-ping-node" data-id="\${node.id}" data-name="\${node.name || node.target_address}">删除</button>
+                </div>
+            </div>
+        \`;
+        mobileContainer.appendChild(card);
+    });
+
+    // Bind actions
+    document.querySelectorAll('.edit-ping-node').forEach(btn => {
+        btn.addEventListener('click', function() {
+            showPingNodeModal(this.dataset.id);
+        });
+    });
+
+    document.querySelectorAll('.delete-ping-node').forEach(btn => {
+        btn.addEventListener('click', function() {
+            showDeletePingNodeModal(this.dataset.id, this.dataset.name);
+        });
+    });
+}
+
+function showPingNodeModal(nodeId = null) {
+    const form = document.getElementById('pingNodeForm');
+    if (form) {
+        form.reset();
+    }
+
+    document.getElementById('pingNodeId').value = '';
+    document.getElementById('pingNodeEnabled').checked = true;
+    document.getElementById('pingNodeModalTitle').textContent = '添加Ping节点';
+
+    if (nodeId) {
+        const node = pingNodeList.find(n => n.id === nodeId);
+        if (node) {
+            document.getElementById('pingNodeId').value = node.id;
+            document.getElementById('pingNodeName').value = node.name || '';
+            document.getElementById('pingNodeTarget').value = node.target_address || '';
+            document.getElementById('pingNodeDescription').value = node.description || '';
+            document.getElementById('pingNodeEnabled').checked = !!node.enabled;
+            document.getElementById('pingNodeModalTitle').textContent = '编辑Ping节点';
+        }
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('pingNodeModal'));
+    modal.show();
+}
+
+async function savePingNode() {
+    const nodeId = document.getElementById('pingNodeId').value;
+    const name = document.getElementById('pingNodeName').value.trim();
+    const target = document.getElementById('pingNodeTarget').value.trim();
+    const description = document.getElementById('pingNodeDescription').value.trim();
+    const enabled = document.getElementById('pingNodeEnabled').checked;
+
+    if (!name || !target) {
+        showToast('warning', '节点名称和目标地址不能为空');
+        return;
+    }
+
+    try {
+        const payload = { name, target_address: target, description, enabled };
+        const url = nodeId ? \`/api/admin/ping-nodes/\${nodeId}\` : '/api/admin/ping-nodes';
+        const method = nodeId ? 'PUT' : 'POST';
+        await apiRequest(url, {
+            method,
+            body: JSON.stringify(payload)
+        });
+
+        const modalInstance = bootstrap.Modal.getInstance(document.getElementById('pingNodeModal'));
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+
+        showToast('success', nodeId ? 'Ping节点已更新' : 'Ping节点已添加');
+        refreshPingNodes();
+    } catch (error) {
+        showToast('danger', '保存Ping节点失败: ' + error.message);
+    }
+}
+
+function showDeletePingNodeModal(nodeId, nodeName) {
+    currentPingNodeId = nodeId;
+    document.getElementById('deletePingNodeName').textContent = nodeName || '';
+
+    const modal = new bootstrap.Modal(document.getElementById('deletePingNodeModal'));
+    modal.show();
+}
+
+async function deletePingNode(nodeId) {
+    try {
+        await apiRequest(\`/api/admin/ping-nodes/\${nodeId}\`, {
+            method: 'DELETE'
+        });
+
+        const modalInstance = bootstrap.Modal.getInstance(document.getElementById('deletePingNodeModal'));
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+
+        showToast('success', 'Ping节点已删除');
+        refreshPingNodes();
+    } catch (error) {
+        showToast('danger', '删除Ping节点失败: ' + error.message);
+    } finally {
+        currentPingNodeId = null;
     }
 }
 
