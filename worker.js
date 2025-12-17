@@ -5232,27 +5232,29 @@ function getIndexHtml() {
     <style>
         /* iOS inspired surface styling */
         :root {
-            --ios-surface: rgba(255, 255, 255, 0.88);
-            --ios-surface-dark: rgba(38, 43, 48, 0.9);
-            --ios-border: rgba(0, 0, 0, 0.06);
-            --ios-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            --ios-surface: rgba(255, 255, 255, 0.85);
+            --ios-surface-dark: rgba(28, 32, 36, 0.88);
+            --ios-border: rgba(255, 255, 255, 0.45);
+            --ios-shadow: 0 18px 42px rgba(15, 23, 42, 0.14);
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+            background: radial-gradient(120% 120% at 10% 20%, #e0f2fe 0%, #f8fafc 45%, #e2e8f0 100%);
+            color: #0f172a;
+            background-attachment: fixed;
         }
         .card, .modal-content {
-            border-radius: 16px;
+            border-radius: 18px;
             border: 1px solid var(--ios-border);
             box-shadow: var(--ios-shadow);
-            backdrop-filter: blur(10px);
-            background-color: var(--ios-surface);
+            backdrop-filter: saturate(180%) blur(16px);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(245, 248, 255, 0.92));
         }
         [data-bs-theme="dark"] .card,
         [data-bs-theme="dark"] .modal-content {
-            background-color: var(--ios-surface-dark);
-            border-color: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+            background: linear-gradient(145deg, rgba(34, 39, 46, 0.92), rgba(20, 24, 28, 0.92));
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
         }
         .btn {
             border-radius: 999px;
@@ -5852,27 +5854,29 @@ function getLoginHtml() {
     <style>
         /* iOS inspired surface styling */
         :root {
-            --ios-surface: rgba(255, 255, 255, 0.88);
-            --ios-surface-dark: rgba(38, 43, 48, 0.9);
-            --ios-border: rgba(0, 0, 0, 0.06);
-            --ios-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            --ios-surface: rgba(255, 255, 255, 0.85);
+            --ios-surface-dark: rgba(28, 32, 36, 0.88);
+            --ios-border: rgba(255, 255, 255, 0.45);
+            --ios-shadow: 0 18px 42px rgba(15, 23, 42, 0.14);
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+            background: radial-gradient(120% 120% at 10% 20%, #e0f2fe 0%, #f8fafc 45%, #e2e8f0 100%);
+            color: #0f172a;
+            background-attachment: fixed;
         }
         .card, .modal-content {
-            border-radius: 16px;
+            border-radius: 18px;
             border: 1px solid var(--ios-border);
             box-shadow: var(--ios-shadow);
-            backdrop-filter: blur(10px);
-            background-color: var(--ios-surface);
+            backdrop-filter: saturate(180%) blur(16px);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(245, 248, 255, 0.92));
         }
         [data-bs-theme="dark"] .card,
         [data-bs-theme="dark"] .modal-content {
-            background-color: var(--ios-surface-dark);
-            border-color: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+            background: linear-gradient(145deg, rgba(34, 39, 46, 0.92), rgba(20, 24, 28, 0.92));
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
         }
         .btn {
             border-radius: 999px;
@@ -6166,27 +6170,29 @@ function getAdminHtml() {
     <style>
         /* iOS inspired surface styling */
         :root {
-            --ios-surface: rgba(255, 255, 255, 0.88);
-            --ios-surface-dark: rgba(38, 43, 48, 0.9);
-            --ios-border: rgba(0, 0, 0, 0.06);
-            --ios-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            --ios-surface: rgba(255, 255, 255, 0.85);
+            --ios-surface-dark: rgba(28, 32, 36, 0.88);
+            --ios-border: rgba(255, 255, 255, 0.45);
+            --ios-shadow: 0 18px 42px rgba(15, 23, 42, 0.14);
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+            background: radial-gradient(120% 120% at 10% 20%, #e0f2fe 0%, #f8fafc 45%, #e2e8f0 100%);
+            color: #0f172a;
+            background-attachment: fixed;
         }
         .card, .modal-content {
-            border-radius: 16px;
+            border-radius: 18px;
             border: 1px solid var(--ios-border);
             box-shadow: var(--ios-shadow);
-            backdrop-filter: blur(10px);
-            background-color: var(--ios-surface);
+            backdrop-filter: saturate(180%) blur(16px);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(245, 248, 255, 0.92));
         }
         [data-bs-theme="dark"] .card,
         [data-bs-theme="dark"] .modal-content {
-            background-color: var(--ios-surface-dark);
-            border-color: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+            background: linear-gradient(145deg, rgba(34, 39, 46, 0.92), rgba(20, 24, 28, 0.92));
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
         }
         .btn {
             border-radius: 999px;
@@ -7167,8 +7173,12 @@ hr.my-4 {
 }
 
 /* 导航栏主题跟随 - 精简版 */
-[data-bs-theme="light"] .navbar { background-color: #f8f9fa !important; }
-[data-bs-theme="dark"] .navbar { background-color: #212529 !important; }
+.navbar {
+    backdrop-filter: saturate(180%) blur(14px);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+[data-bs-theme="light"] .navbar { background-color: rgba(255, 255, 255, 0.82) !important; border-bottom: 1px solid rgba(255, 255, 255, 0.45); }
+[data-bs-theme="dark"] .navbar { background-color: rgba(24, 28, 32, 0.82) !important; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
 
 /* 导航栏文字主题跟随 */
 [data-bs-theme="light"] .navbar .nav-link, [data-bs-theme="light"] .navbar a { color: #212529 !important; }
@@ -8578,6 +8588,13 @@ function showError(message, containerId = null) {
     }
 }
 
+// 统一错误信息格式化
+function getErrorMessage(error) {
+    if (!error) return 'Unknown error';
+    if (typeof error === 'string') return error;
+    return error.message || error.toString() || 'Unknown error';
+}
+
 // 显示成功消息
 function showSuccess(message, containerId = null) {
         if (containerId) {
@@ -9691,13 +9708,55 @@ async function loadServerUptimeData() {
     }
     
     try {
-        const data = await apiRequest('/api/admin/servers/uptime?period=24h');
-        const uptimeData = data.servers || [];
+        const hasToken = !!localStorage.getItem('auth_token');
+        let uptimeData = [];
+
+        // 优先使用管理员批量接口（登录状态）
+        if (hasToken) {
+            try {
+                const data = await apiRequest('/api/admin/servers/uptime?period=24h');
+                uptimeData = data.servers || [];
+            } catch (error) {
+                console.warn('管理员在线率接口不可用，尝试公共接口获取：', getErrorMessage(error));
+            }
+        }
+
+        // 游客或管理员接口失败时，逐个获取公开服务器在线率
+        if (!uptimeData.length) {
+            const serverRows = Array.from(document.querySelectorAll('#serverTableBody tr.server-row'));
+            const uptimePromises = serverRows.map(row => {
+                const serverId = row.getAttribute('data-server-id');
+                if (!serverId) return null;
+                return publicApiRequest(`/api/servers/${serverId}/uptime?period=24h`)
+                    .then(res => ({
+                        id: serverId,
+                        uptime: res.uptime,
+                        totalTime: res.totalTime,
+                        onlineTime: res.onlineTime
+                    }))
+                    .catch(error => {
+                        console.warn(`加载服务器 ${serverId} 在线率数据失败:`, getErrorMessage(error));
+                        return { id: serverId, error: true };
+                    });
+            }).filter(Boolean);
+
+            uptimeData = uptimePromises.length ? await Promise.all(uptimePromises) : [];
+        }
         
         // 更新每个服务器的在线率显示
         uptimeData.forEach(server => {
+            if (server && server.error) {
+                console.warn(`服务器 ${server.id} 的在线率数据返回错误状态，跳过展示`);
+                return;
+            }
             const uptimeCell = document.querySelector(\`.uptime-cell[data-server-id="\${server.id}"]\`);
-            const uptimePercentage = server.uptime;
+            let uptimePercentage = Number(server.uptime);
+            if (Number.isNaN(uptimePercentage)) {
+                console.warn(`服务器 ${server.id} 的在线率数据无效，跳过展示`);
+                return;
+            }
+            uptimePercentage = Math.min(100, Math.max(0, uptimePercentage));
+
             let uptimeClass = 'text-success';
             if (uptimePercentage < 95) uptimeClass = 'text-warning';
             if (uptimePercentage < 80) uptimeClass = 'text-danger';
@@ -9705,8 +9764,8 @@ async function loadServerUptimeData() {
             // 更新桌面端显示
             if (uptimeCell) {
                 uptimeCell.innerHTML = \`<span class="\${uptimeClass}" style="cursor: pointer; text-decoration: underline;" onclick="showUptimeHistory('\${server.id}')">\${uptimePercentage}%</span>\`;
-                const totalHours = Math.round(server.totalTime / 60 * 100) / 100;
-                uptimeCell.title = \`点击查看详细历史 - 在线率: \${uptimePercentage}% (在线\${server.onlineTime}分钟 / 总计\${server.totalTime}分钟，约\${totalHours}小时)\`;
+                const totalHours = server.totalTime ? Math.round(server.totalTime / 60 * 100) / 100 : 0;
+                uptimeCell.title = \`点击查看详细历史 - 在线率: \${uptimePercentage}% (在线\${server.onlineTime || 0}分钟 / 总计\${server.totalTime || 0}分钟，约\${totalHours}小时)\`;
             } else {
                 // 如果找不到特定的单元格，尝试通过索引找到对应行的在线率列
                 console.warn(\`无法找到服务器 \${server.id} 的在线率单元格\`);
@@ -9715,13 +9774,12 @@ async function loadServerUptimeData() {
             // 更新移动端显示（使用默认时间段）
             const mobileUptimeCell = document.getElementById(\`mobile-uptime-\${server.id}\`);
             if (mobileUptimeCell) {
+                mobileUptimeCell.style.textDecoration = 'underline';
                 const mobileSelect = document.getElementById(\`mobile-period-\${server.id}\`);
                 const period = mobileSelect ? mobileSelect.value : '24h';
                 // 初始化移动端在线率显示
                 updateMobileUptimeDisplay(server.id, period);
             }
-                mobileUptimeCell.style.textDecoration = 'underline';
-            
         });
     } catch (error) {
         console.error('加载在线率数据失败:', error);
