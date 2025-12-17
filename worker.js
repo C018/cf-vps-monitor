@@ -8557,9 +8557,8 @@ async function parseJsonResponse(response, responseClone) {
     if (!responseClone) {
         throw new Error('parseJsonResponse requires a cloned response for fallback text');
     }
-    let rawText = '';
+    const rawText = await responseClone.text().catch(() => '');
     try {
-        rawText = await responseClone.text().catch(() => '');
         return JSON.parse(rawText);
     } catch (parseError) {
         const fallbackMessage = rawText || parseError.message || 'Failed to parse response';
@@ -8575,7 +8574,10 @@ async function extractErrorMessage(responseClone, fallbackMessage) {
         }
         try {
             const parsed = JSON.parse(text);
-            return parsed.message || text || fallbackMessage;
+            if (Object.prototype.hasOwnProperty.call(parsed, 'message')) {
+                return parsed.message;
+            }
+            return text || fallbackMessage;
         } catch {
             return text;
         }
@@ -8655,28 +8657,24 @@ async function apiRequest(url, options = {}) {
     };
     const hadToken = !!localStorage.getItem('auth_token');
 
-    try {
-        const response = await fetch(url, defaultOptions);
-        const responseClone = response.clone();
+    const response = await fetch(url, defaultOptions);
+    const responseClone = response.clone();
 
-        // 处理认证失败
-        if (response.status === 401) {
-            localStorage.removeItem('auth_token');
-            if (hadToken && window.location.pathname !== '/login.html') {
-                window.location.href = 'login.html';
-            }
-            throw new Error('认证失败，请重新登录');
+    // 处理认证失败
+    if (response.status === 401) {
+        localStorage.removeItem('auth_token');
+        if (hadToken && window.location.pathname !== '/login.html') {
+            window.location.href = 'login.html';
         }
-
-        if (!response.ok) {
-            const errorMessage = await extractErrorMessage(responseClone, '请求失败 (' + response.status + ')');
-            throw new Error(errorMessage);
-        }
-
-        return await parseJsonResponse(response, responseClone);
-    } catch (error) {
-                throw error;
+        throw new Error('认证失败，请重新登录');
     }
+
+    if (!response.ok) {
+        const errorMessage = await extractErrorMessage(responseClone, '请求失败 (' + response.status + ')');
+        throw new Error(errorMessage);
+    }
+
+    return await parseJsonResponse(response, responseClone);
 }
 
 // 公开API请求函数（用于不需要认证的请求）
@@ -8686,19 +8684,15 @@ async function publicApiRequest(url, options = {}) {
         ...options
     };
 
-    try {
-        const response = await fetch(url, defaultOptions);
-        const responseClone = response.clone();
+    const response = await fetch(url, defaultOptions);
+    const responseClone = response.clone();
 
-        if (!response.ok) {
-            const errorMessage = await extractErrorMessage(responseClone, '请求失败 (' + response.status + ')');
-            throw new Error(errorMessage);
-        }
-
-        return await parseJsonResponse(response, responseClone);
-    } catch (error) {
-                throw error;
+    if (!response.ok) {
+        const errorMessage = await extractErrorMessage(responseClone, '请求失败 (' + response.status + ')');
+        throw new Error(errorMessage);
     }
+
+    return await parseJsonResponse(response, responseClone);
 }
 
 // 显示错误消息
