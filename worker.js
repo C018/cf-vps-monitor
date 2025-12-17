@@ -11259,7 +11259,7 @@ async function loadDefaultCredentials() {
     try {
         const response = await fetch('/api/auth/default-credentials');
         if (!response.ok) {
-            throw new Error(`Failed to load status: ${response.status}`);
+            throw new Error('Failed to load status: ' + response.status);
         }
 
         const data = await response.json();
