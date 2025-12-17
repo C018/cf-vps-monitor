@@ -8552,8 +8552,8 @@ function getAuthHeaders() {
     return headers;
 }
 
-// Safely parse JSON responses and surface readable errors
-async function parseJsonResponse(response, responseClone = null) {
+// Safely parse JSON responses and surface readable errors (expects a cloned response for fallback text)
+async function parseJsonResponse(response, responseClone) {
     try {
         return await response.json();
     } catch (parseError) {
