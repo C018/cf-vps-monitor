@@ -1605,8 +1605,12 @@ function resolveServerPingTarget(server) {
     return server.realtime_endpoint.trim();
   }
 
-  if (server?.name && /^[a-zA-Z0-9.-]+$/.test(server.name.trim())) {
-    return `https://${server.name.trim()}`;
+  if (server?.name) {
+    const hostname = server.name.trim();
+    const candidate = `https://${hostname}`;
+    if (validateInput(candidate, 'url', 2048)) {
+      return candidate;
+    }
   }
 
   return null;
@@ -2046,7 +2050,7 @@ async function handleServerRoutes(path, method, request, env, corsHeaders) {
       }
 
       const targetAddress = resolveServerPingTarget(server);
-      if (!targetAddress || !validateInput(targetAddress, 'url', 2048)) {
+      if (!targetAddress) {
         return createErrorResponse('Invalid target', '服务器未配置可用的Ping目标', 400, corsHeaders);
       }
 
@@ -2054,13 +2058,24 @@ async function handleServerRoutes(path, method, request, env, corsHeaders) {
       let pingMs = null;
       let errorMessage = null;
 
-      const start = Date.now();
+      let start = Date.now();
       try {
-        const response = await fetch(targetAddress, {
+        let response = await fetch(targetAddress, {
           method: 'HEAD',
           signal: AbortSignal.timeout(5000)
         });
         pingMs = Date.now() - start;
+
+        if (response.status === 405) {
+          start = Date.now();
+          response = await fetch(targetAddress, {
+            method: 'GET',
+            redirect: 'manual',
+            signal: AbortSignal.timeout(5000)
+          });
+          pingMs = Date.now() - start;
+        }
+
         if (!response.ok) {
           status = 'error';
           errorMessage = `HTTP ${response.status}`;
@@ -2068,7 +2083,11 @@ async function handleServerRoutes(path, method, request, env, corsHeaders) {
       } catch (err) {
         pingMs = Date.now() - start;
         status = 'error';
-        errorMessage = err?.message || 'Ping失败';
+        if (err?.name === 'TimeoutError') {
+          errorMessage = 'Ping超时';
+        } else {
+          errorMessage = err?.message || 'Ping失败';
+        }
       }
 
       const nodeId = await ensureServerPingNode(env, server, targetAddress);
@@ -9565,9 +9584,12 @@ function renderPingChart(serverId) {
     }
 
     let path = '';
+    const isSinglePoint = data.length === 1;
     const lastIndex = Math.max(1, data.length - 1);
     data.forEach((item, index) => {
-        const x = padding.left + (index / lastIndex) * chartWidth;
+        const x = isSinglePoint
+            ? padding.left + (chartWidth / 2)
+            : padding.left + (index / lastIndex) * chartWidth;
         const latency = Math.max(0, item.latency || 0);
         const y = padding.top + chartHeight - (latency / maxLatency) * chartHeight;
         path += index === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
@@ -9586,7 +9608,7 @@ function renderPingChart(serverId) {
     xLabel.setAttribute('text-anchor', 'middle');
     xLabel.setAttribute('font-size', '10');
     xLabel.setAttribute('fill', '#666');
-    xLabel.textContent = '时间 (最近24小时)';
+    xLabel.textContent = '时间';
     svg.appendChild(xLabel);
 
     chartContainer.appendChild(svg);
@@ -9635,7 +9657,12 @@ async function runPingTest(serverId) {
 
     try {
         const response = await fetch(`/api/servers/${serverId}/ping`, { method: 'POST' });
-        const data = await response.json().catch(() => ({}));
+        let data;
+        try {
+            data = await response.json();
+        } catch (parseError) {
+            data = { message: 'Ping接口返回格式异常' };
+        }
 
         if (response.ok) {
             const latency = data.ping_time_ms;
@@ -9805,7 +9832,6 @@ function populateDetailsRow(serverId, vpsRealtimeEndPoint,detailsRow) {
         initializeCpuHistoryChart(serverId);
         initializeTrafficHistoryChart(serverId);
         initializePingSection(serverId);
-        runPingTest(serverId);
     }
 }
 
