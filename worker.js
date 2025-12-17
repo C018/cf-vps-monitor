@@ -1296,6 +1296,23 @@ async function createDefaultAdmin(db, env) {
   }
 }
 
+async function isDefaultPasswordActive(db) {
+  try {
+    const admin = await db.prepare(
+      'SELECT password_hash FROM admin_credentials WHERE username = ?'
+    ).bind(DEFAULT_ADMIN_CONFIG.USERNAME).first();
+
+    if (!admin?.password_hash) {
+      return false;
+    }
+
+    return await verifyPassword(DEFAULT_ADMIN_CONFIG.PASSWORD, admin.password_hash);
+  } catch (error) {
+    console.error('Failed to check default password status');
+    return false;
+  }
+}
+
 
 // ==================== 身份验证 ====================
 
@@ -1377,6 +1394,23 @@ function getSecureCorsHeaders(origin, env) {
 
 // 认证路由处理器
 async function handleAuthRoutes(path, method, request, env, corsHeaders, clientIP) {
+  // 默认凭据状态检查
+  if (path === '/api/auth/default-credentials' && method === 'GET') {
+    try {
+      const isDefaultActive = await isDefaultPasswordActive(env.DB);
+      return createApiResponse({
+        defaultPasswordActive: isDefaultActive
+      }, 200, corsHeaders);
+    } catch (error) {
+      return createErrorResponse(
+        'Default credentials check failed',
+        '无法获取默认凭据状态',
+        500,
+        corsHeaders
+      );
+    }
+  }
+
   // 登录处理
   if (path === '/api/auth/login' && method === 'POST') {
     try {
@@ -11217,11 +11251,25 @@ async function apiRequest(url, options = {}) {
     }
 }
 
-// 加载默认凭据信息（本地显示，无需API调用）
-function loadDefaultCredentials() {
+// 加载默认凭据信息（根据后台状态决定是否展示默认密码）
+async function loadDefaultCredentials() {
     const credentialsInfo = document.getElementById('defaultCredentialsInfo');
-    if (credentialsInfo) {
-        credentialsInfo.innerHTML = '默认账号密码: <strong>admin</strong> / <strong>monitor2025!</strong><br><small class="text-danger fw-bold">建议首次登录后修改密码</small>';
+    if (!credentialsInfo) return;
+
+    try {
+        const response = await fetch('/api/auth/default-credentials');
+        if (!response.ok) {
+            throw new Error(`Failed to load status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.defaultPasswordActive) {
+            credentialsInfo.innerHTML = '默认账号密码: <strong>admin</strong> / <strong>monitor2025!</strong><br><small class="text-danger fw-bold">建议首次登录后修改密码</small>';
+        } else {
+            credentialsInfo.textContent = '默认密码已修改，请使用管理员设置的账号密码登录。';
+        }
+    } catch (error) {
+        credentialsInfo.textContent = '无法获取默认密码状态，请检查网络或使用管理员提供的账号密码登录。';
     }
 }
 
