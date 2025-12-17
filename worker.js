@@ -1308,7 +1308,7 @@ async function isDefaultPasswordActive(db) {
 
     return await verifyPassword(DEFAULT_ADMIN_CONFIG.PASSWORD, admin.password_hash);
   } catch (error) {
-    console.error('Failed to check default password status:', error);
+    console.error('Failed to check default password status');
     return false;
   }
 }
