@@ -54,6 +54,7 @@ Next, create a Worker and deploy the code.
 8. Open the `worker.js` file from this repository and copy **all** its content.
 9. Paste the copied code into the Cloudflare Worker editor.
 10. Click the `Deploy` button in the top-right corner of the editor.
+11. **Important! Set Compatibility Date:** Return to the Worker management page, go to `Settings` → `Compatibility Date`, and set it to `2022-01-01` or newer (to support ES6 class syntax). If you encounter "Unexpected token 'class'" error, ensure this is properly configured.
 
 ### 3. Add Environment Variables
 

@@ -1,5 +1,10 @@
 // VPS监控面板 - Cloudflare Worker解决方案
 // 版本: 1.1.0
+// 
+// Cloudflare Workers Compatibility
+// This worker requires ES6+ features (classes, async/await, export default)
+// When deploying via dashboard, ensure compatibility_date is set to 2022-01-01 or later
+// in Worker settings under Settings > Compatibility Date
 // ==================== 配置常量 ====================
 
 // 默认管理员账户配置
