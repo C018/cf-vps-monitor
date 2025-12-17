@@ -8557,12 +8557,30 @@ async function parseJsonResponse(response, responseClone) {
     if (!responseClone) {
         throw new Error('parseJsonResponse requires a cloned response for fallback text');
     }
+    let rawText = '';
     try {
-        return await response.json();
+        rawText = await responseClone.text().catch(() => '');
+        return JSON.parse(rawText);
     } catch (parseError) {
-        const text = await responseClone.text().catch(() => '');
-        const fallbackMessage = text || parseError.message || 'Failed to parse response';
+        const fallbackMessage = rawText || parseError.message || 'Failed to parse response';
         throw new Error('Failed to parse response (status: ' + response.status + '): ' + fallbackMessage);
+    }
+}
+
+async function extractErrorMessage(responseClone, fallbackMessage) {
+    try {
+        const text = await responseClone.text();
+        if (!text) {
+            return fallbackMessage;
+        }
+        try {
+            const parsed = JSON.parse(text);
+            return parsed.message || text || fallbackMessage;
+        } catch {
+            return text;
+        }
+    } catch {
+        return fallbackMessage;
     }
 }
 
@@ -8651,11 +8669,8 @@ async function apiRequest(url, options = {}) {
         }
 
         if (!response.ok) {
-            const errorData = await response.json().catch(async () => {
-                const text = await responseClone.text().catch(() => '');
-                return text ? { message: text } : {};
-            });
-            throw new Error(errorData.message || \`请求失败 (\${response.status})\`);
+            const errorMessage = await extractErrorMessage(responseClone, '请求失败 (' + response.status + ')');
+            throw new Error(errorMessage);
         }
 
         return await parseJsonResponse(response, responseClone);
@@ -8676,11 +8691,8 @@ async function publicApiRequest(url, options = {}) {
         const responseClone = response.clone();
 
         if (!response.ok) {
-            const errorData = await response.json().catch(async () => {
-                const text = await responseClone.text().catch(() => '');
-                return text ? { message: text } : {};
-            });
-            throw new Error(errorData.message || \`请求失败 (\${response.status})\`);
+            const errorMessage = await extractErrorMessage(responseClone, '请求失败 (' + response.status + ')');
+            throw new Error(errorMessage);
         }
 
         return await parseJsonResponse(response, responseClone);
