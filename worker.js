@@ -1599,6 +1599,50 @@ async function handleAuthRoutes(path, method, request, env, corsHeaders, clientI
   return null; // 不匹配此模块的路由
 }
 
+// 基于服务器信息构建Ping目标地址
+function resolveServerPingTarget(server) {
+  if (server?.realtime_endpoint && validateInput(server.realtime_endpoint, 'url', 2048)) {
+    return server.realtime_endpoint.trim();
+  }
+
+  if (server?.name && /^[a-zA-Z0-9.-]+$/.test(server.name.trim())) {
+    return `https://${server.name.trim()}`;
+  }
+
+  return null;
+}
+
+// 确保存在对应的Ping节点（使用服务器名称对齐）
+async function ensureServerPingNode(env, server, targetAddress) {
+  const nodeId = `server-ping-${server.id}`;
+  const now = Math.floor(Date.now() / 1000);
+
+  const existing = await env.DB.prepare('SELECT id FROM ping_nodes WHERE id = ?')
+    .bind(nodeId)
+    .first();
+
+  if (!existing) {
+    await env.DB.prepare(`
+      INSERT INTO ping_nodes (id, name, target_address, description, enabled, created_at, sort_order)
+      VALUES (?, ?, ?, ?, 1, ?, 0)
+    `).bind(
+      nodeId,
+      server.name || server.id,
+      targetAddress,
+      '自动创建的服务器Ping节点',
+      now
+    ).run();
+  } else {
+    await env.DB.prepare(`
+      UPDATE ping_nodes
+      SET name = ?, target_address = ?, enabled = 1
+      WHERE id = ?
+    `).bind(server.name || server.id, targetAddress, nodeId).run();
+  }
+
+  return nodeId;
+}
+
 // 服务器管理路由处理器
 async function handleServerRoutes(path, method, request, env, corsHeaders) {
   // 获取服务器列表（公开，支持管理员和游客模式）
@@ -1931,6 +1975,118 @@ async function handleServerRoutes(path, method, request, env, corsHeaders) {
       
     } catch (error) {
       return handleDbError(error, corsHeaders, '获取所有服务器在线率');
+    }
+  }
+
+  // 获取服务器的ping结果历史
+  if (path.match(/^\/api\/servers\/([^\/]+)\/ping\/history$/) && method === 'GET') {
+    try {
+      const serverId = path.split('/')[3];
+
+      // 权限：公开服务器可直接访问，非公开需要管理员
+      const user = await authenticateRequestOptional(request, env);
+      if (!user) {
+        const server = await env.DB.prepare('SELECT is_public FROM servers WHERE id = ?')
+          .bind(serverId)
+          .first();
+        if (!server || !server.is_public) {
+          return createErrorResponse('Not Found', '服务器不存在或未公开', 404, corsHeaders);
+        }
+      }
+
+      const url = new URL(request.url);
+      const period = url.searchParams.get('period') || '24h';
+
+      let timeRange;
+      const now = Math.floor(Date.now() / 1000);
+
+      switch (period) {
+        case '1h': timeRange = now - 3600; break;
+        case '6h': timeRange = now - 21600; break;
+        case '12h': timeRange = now - 43200; break;
+        case '24h': timeRange = now - 86400; break;
+        case '7d': timeRange = now - 604800; break;
+        case '30d': timeRange = now - 2592000; break;
+        default: timeRange = now - 86400;
+      }
+
+      const { results } = await env.DB.prepare(`
+        SELECT pr.timestamp, pr.ping_time_ms, pr.status, pr.error_message,
+               pn.name as node_name, pn.target_address
+        FROM ping_results pr
+        JOIN ping_nodes pn ON pr.node_id = pn.id
+        WHERE pr.server_id = ? AND pr.timestamp >= ?
+        ORDER BY pr.timestamp DESC
+        LIMIT 1000
+      `).bind(serverId, timeRange).all();
+
+      return createSuccessResponse({ ping_history: results }, corsHeaders);
+    } catch (error) {
+      return handleDbError(error, corsHeaders, '获取ping历史记录');
+    }
+  }
+
+  // 执行服务器Ping并记录结果
+  if (path.match(/^\/api\/servers\/([^\/]+)\/ping$/) && (method === 'GET' || method === 'POST')) {
+    try {
+      const serverId = path.split('/')[3];
+
+      // 权限：公开服务器可访问，非公开需要管理员
+      let server = await env.DB.prepare('SELECT id, name, realtime_endpoint, is_public FROM servers WHERE id = ?')
+        .bind(serverId)
+        .first();
+      if (!server) {
+        return createErrorResponse('Not Found', '服务器不存在', 404, corsHeaders);
+      }
+      if (!server.is_public) {
+        const user = await authenticateAdmin(request, env);
+        if (!user) {
+          return createErrorResponse('Unauthorized', '需要管理员权限', 401, corsHeaders);
+        }
+      }
+
+      const targetAddress = resolveServerPingTarget(server);
+      if (!targetAddress || !validateInput(targetAddress, 'url', 2048)) {
+        return createErrorResponse('Invalid target', '服务器未配置可用的Ping目标', 400, corsHeaders);
+      }
+
+      let status = 'success';
+      let pingMs = null;
+      let errorMessage = null;
+
+      const start = Date.now();
+      try {
+        const response = await fetch(targetAddress, {
+          method: 'HEAD',
+          signal: AbortSignal.timeout(5000)
+        });
+        pingMs = Date.now() - start;
+        if (!response.ok) {
+          status = 'error';
+          errorMessage = `HTTP ${response.status}`;
+        }
+      } catch (err) {
+        pingMs = Date.now() - start;
+        status = 'error';
+        errorMessage = err?.message || 'Ping失败';
+      }
+
+      const nodeId = await ensureServerPingNode(env, server, targetAddress);
+      const timestamp = Math.floor(Date.now() / 1000);
+
+      await env.DB.prepare(`
+        INSERT INTO ping_results (server_id, node_id, timestamp, ping_time_ms, status, error_message)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).bind(serverId, nodeId, timestamp, pingMs, status, errorMessage).run();
+
+      return createSuccessResponse({
+        ping_time_ms: pingMs,
+        status,
+        target: targetAddress,
+        node_id: nodeId
+      }, corsHeaders);
+    } catch (error) {
+      return handleDbError(error, corsHeaders, '执行ping测试');
     }
   }
 
@@ -9341,6 +9497,175 @@ function resetCpuChart(serverId) {
     }
 }
 
+// Ping历史数据缓存
+const pingHistoryStore = {};
+
+function resetPingChart(serverId) {
+    const chartContainer = document.getElementById(`ping-chart-${serverId}`);
+    if (chartContainer) {
+        chartContainer.innerHTML = `
+            <div class="text-center p-3 text-muted" style="font-size: 0.875rem;">
+                暂无延迟数据
+            </div>
+        `;
+    }
+}
+
+function renderPingChart(serverId) {
+    const chartContainer = document.getElementById(`ping-chart-${serverId}`);
+    const history = pingHistoryStore[serverId] || [];
+    if (!chartContainer) return;
+    if (!history.length) {
+        resetPingChart(serverId);
+        return;
+    }
+
+    const data = history.slice().sort((a, b) => a.timestamp - b.timestamp);
+    const maxLatency = data.reduce((max, item) => Math.max(max, item.latency || 0), 0);
+    if (maxLatency <= 0) {
+        resetPingChart(serverId);
+        return;
+    }
+
+    chartContainer.innerHTML = '';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    svg.setAttribute('viewBox', '0 0 400 120');
+    svg.setAttribute('preserveAspectRatio', 'xMinYMid meet');
+    svg.style.position = 'absolute';
+    svg.style.width = '100%';
+    svg.style.height = '100%';
+    svg.style.left = '0px';
+
+    const padding = { top: 15, right: 20, bottom: 20, left: 35 };
+    const chartWidth = 400 - padding.left - padding.right;
+    const chartHeight = 120 - padding.top - padding.bottom;
+
+    // 网格线与Y轴标签
+    for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (i / 4) * chartHeight;
+        const gridLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        gridLine.setAttribute('x1', padding.left.toString());
+        gridLine.setAttribute('y1', y.toString());
+        gridLine.setAttribute('x2', (400 - padding.right).toString());
+        gridLine.setAttribute('y2', y.toString());
+        gridLine.setAttribute('stroke', '#e9ecef');
+        gridLine.setAttribute('stroke-width', '0.5');
+        svg.appendChild(gridLine);
+
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', (padding.left - 5).toString());
+        label.setAttribute('y', (y + 3).toString());
+        label.setAttribute('text-anchor', 'end');
+        label.setAttribute('font-size', '8');
+        label.setAttribute('fill', '#666');
+        label.textContent = `${Math.round(maxLatency * (1 - i / 4))} ms`;
+        svg.appendChild(label);
+    }
+
+    let path = '';
+    const lastIndex = Math.max(1, data.length - 1);
+    data.forEach((item, index) => {
+        const x = padding.left + (index / lastIndex) * chartWidth;
+        const latency = Math.max(0, item.latency || 0);
+        const y = padding.top + chartHeight - (latency / maxLatency) * chartHeight;
+        path += index === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
+    });
+
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    line.setAttribute('d', path);
+    line.setAttribute('fill', 'none');
+    line.setAttribute('stroke', '#0d6efd');
+    line.setAttribute('stroke-width', '2');
+    svg.appendChild(line);
+
+    const xLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    xLabel.setAttribute('x', '200');
+    xLabel.setAttribute('y', '115');
+    xLabel.setAttribute('text-anchor', 'middle');
+    xLabel.setAttribute('font-size', '10');
+    xLabel.setAttribute('fill', '#666');
+    xLabel.textContent = '时间 (最近24小时)';
+    svg.appendChild(xLabel);
+
+    chartContainer.appendChild(svg);
+}
+
+async function loadPingHistory(serverId) {
+    const chartContainer = document.getElementById(`ping-chart-${serverId}`);
+    if (chartContainer) {
+        chartContainer.innerHTML = `
+            <div class="text-center p-3 text-muted" style="font-size: 0.875rem;">
+                正在加载延迟数据...
+            </div>
+        `;
+    }
+
+    try {
+        const response = await fetch(`/api/servers/${serverId}/ping/history?period=24h`);
+        if (response.ok) {
+            const data = await response.json();
+            const history = (data.ping_history || []).map(item => ({
+                timestamp: item.timestamp,
+                latency: item.ping_time_ms
+            })).filter(item => typeof item.latency === 'number');
+
+            pingHistoryStore[serverId] = history;
+            renderPingChart(serverId);
+        } else {
+            resetPingChart(serverId);
+        }
+    } catch (error) {
+        resetPingChart(serverId);
+    }
+}
+
+async function runPingTest(serverId) {
+    const latencyDisplay = document.getElementById(`ping-latency-${serverId}`);
+    const testButton = document.getElementById(`ping-test-btn-${serverId}`);
+
+    if (latencyDisplay) {
+        latencyDisplay.textContent = '正在测试...';
+    }
+    if (testButton) {
+        testButton.disabled = true;
+        testButton.textContent = '测试中...';
+    }
+
+    try {
+        const response = await fetch(`/api/servers/${serverId}/ping`, { method: 'POST' });
+        const data = await response.json().catch(() => ({}));
+
+        if (response.ok) {
+            const latency = data.ping_time_ms;
+            if (latencyDisplay) {
+                latencyDisplay.textContent = typeof latency === 'number'
+                    ? `当前延迟：${latency} ms`
+                    : '未获取到延迟数据';
+            }
+        } else if (latencyDisplay) {
+            latencyDisplay.textContent = data?.message || 'Ping失败';
+        }
+    } catch (error) {
+        if (latencyDisplay) {
+            latencyDisplay.textContent = 'Ping失败';
+        }
+    } finally {
+        if (testButton) {
+            testButton.disabled = false;
+            testButton.textContent = '测试Ping';
+        }
+    }
+
+    await loadPingHistory(serverId);
+}
+
+async function initializePingSection(serverId) {
+    resetPingChart(serverId);
+    await loadPingHistory(serverId);
+}
+
 // Populate the detailed row with data
 function populateDetailsRow(serverId, vpsRealtimeEndPoint,detailsRow) {
     // 初始化CPU历史数据图表
@@ -9459,6 +9784,18 @@ function populateDetailsRow(serverId, vpsRealtimeEndPoint,detailsRow) {
                 </div>
             </div>
         </div>
+        <div class="detail-item">
+            <div class="d-flex justify-content-between align-items-center">
+                <strong>Ping 延迟</strong>
+                <button class="btn btn-sm btn-outline-primary" id="ping-test-btn-\${serverId}" onclick="runPingTest('\${serverId}')">测试Ping</button>
+            </div>
+            <div id="ping-latency-\${serverId}" class="text-muted mt-2">等待测试...</div>
+            <div id="ping-chart-\${serverId}" style="height: 120px; border: 1px solid #ddd; border-radius: 4px; position: relative; background-color: #f8f9fa; margin-top: 5px;">
+                <div class="text-center p-3 text-muted" style="font-size: 0.875rem;">
+                    暂无延迟数据
+                </div>
+            </div>
+        </div>
     \`;
 
     detailsContentDiv.innerHTML = detailsHtml || '<p class="text-muted">无详细数据</p>';
@@ -9467,6 +9804,8 @@ function populateDetailsRow(serverId, vpsRealtimeEndPoint,detailsRow) {
     if (detailsHtml) {
         initializeCpuHistoryChart(serverId);
         initializeTrafficHistoryChart(serverId);
+        initializePingSection(serverId);
+        runPingTest(serverId);
     }
 }
 
