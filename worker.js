@@ -8552,14 +8552,16 @@ function getAuthHeaders() {
     return headers;
 }
 
-// 安全解析JSON响应，优先返回可读错误信息
+// Safely parse JSON responses and surface readable errors
 async function parseJsonResponse(response, responseClone = null) {
     try {
         return await response.json();
     } catch (parseError) {
-        const cloneForText = responseClone || response.clone();
-        const text = await cloneForText.text().catch(() => '');
-        throw new Error(text || '响应解析失败');
+        if (!responseClone) {
+            throw parseError;
+        }
+        const text = await responseClone.text().catch(() => '');
+        throw new Error(text || 'Failed to parse response');
     }
 }
 
