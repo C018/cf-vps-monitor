@@ -8552,6 +8552,17 @@ function getAuthHeaders() {
     return headers;
 }
 
+// 安全解析JSON响应，优先返回可读错误信息
+async function parseJsonResponse(response, fallbackResponse) {
+    const responseClone = fallbackResponse || response.clone();
+    try {
+        return await response.json();
+    } catch (parseError) {
+        const text = await responseClone.text().catch(() => '');
+        throw new Error(text || '响应解析失败');
+    }
+}
+
 // ==================== VPS状态变化检测 ====================
 
 // 检测VPS状态变化并发送通知
@@ -8625,6 +8636,7 @@ async function apiRequest(url, options = {}) {
 
     try {
         const response = await fetch(url, defaultOptions);
+        const responseClone = response.clone();
 
         // 处理认证失败
         if (response.status === 401) {
@@ -8636,11 +8648,14 @@ async function apiRequest(url, options = {}) {
         }
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
+            const errorData = await response.json().catch(async () => {
+                const text = await responseClone.text().catch(() => '');
+                return text ? { message: text } : {};
+            });
             throw new Error(errorData.message || \`请求失败 (\${response.status})\`);
         }
 
-        return await response.json();
+        return await parseJsonResponse(response, responseClone);
     } catch (error) {
                 throw error;
     }
@@ -8655,13 +8670,17 @@ async function publicApiRequest(url, options = {}) {
 
     try {
         const response = await fetch(url, defaultOptions);
+        const responseClone = response.clone();
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
+            const errorData = await response.json().catch(async () => {
+                const text = await responseClone.text().catch(() => '');
+                return text ? { message: text } : {};
+            });
             throw new Error(errorData.message || \`请求失败 (\${response.status})\`);
         }
 
-        return await response.json();
+        return await parseJsonResponse(response, responseClone);
     } catch (error) {
                 throw error;
     }
