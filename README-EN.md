@@ -170,6 +170,7 @@ The installation script itself also provides management functions:
 
 ### Sponsorship Welcome🤣:
 
-[![Powered by DartNode](https://dartnode.com/branding/DN-Open-Source-sm.png)](https://dartnode.com "Powered by DartNode - Free VPS for Open Source")
+[![Powered by cloudflare](https://cf-assets.www.cloudflare.com/slt3lc6tev37/6EYsdkdfBcHtgPmgp3YtkD/0b203affd2053988264b9253b13de6b3/logo-thumbnail.png)](https://www.cloudflare.com/ "Powered by cloudflare - Free workers for Open Source")
+
 
 
