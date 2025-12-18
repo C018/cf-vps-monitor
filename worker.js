@@ -8674,10 +8674,10 @@ function extractMultiline(fn) {
   const source = fn.toString();
   const start = source.indexOf(INLINE_START);
   const end = source.indexOf(INLINE_END, start + INLINE_START.length);
-  if (start === -1 || end === -1 || end <= start) {
+  if (start === -1 || end === -1 || end <= start + INLINE_START.length) {
     throw new Error('Failed to extract inline content: missing or misplaced markers');
   }
-  return source.slice(start + INLINE_START.length, end);
+  return source.slice(start + INLINE_START.length, end).trim();
 }
 
 function getMainJs() {
