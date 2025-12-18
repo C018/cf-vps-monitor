@@ -8512,7 +8512,7 @@ function resolveLookingGlassUrl() {
     }
 }
 function isSafeId(id) {
-    return /^[\\w.-]+$/.test(String(id || ''));
+    return /^[\w.-]+$/.test(String(id || ''));
 }
 function escapeHtml(text) {
     if (text === undefined || text === null) return '';
