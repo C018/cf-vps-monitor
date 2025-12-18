@@ -8668,8 +8668,13 @@ p, div, span:not(.badge), td, th, .btn, button, a:not(.navbar-brand),
 }
 
 function extractMultiline(fn) {
-  const match = fn.toString().match(/\/\*([\s\S]*?)\*\//);
-  return match ? match[1] : '';
+  const source = fn.toString();
+  const start = source.indexOf('/*');
+  const end = source.lastIndexOf('*/');
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error('Failed to extract multiline content');
+  }
+  return source.slice(start + 2, end);
 }
 
 function getMainJs() {
