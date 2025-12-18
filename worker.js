@@ -6993,7 +6993,7 @@ function getAdminHtml() {
         </div>
     </div>
 
-     <!-- 网站删除确认模态框 -->
+    <!-- 网站删除确认模态框 -->
     <div class="modal fade" id="deleteSiteModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -12483,7 +12483,7 @@ function initEventListeners() {
         saveSite();
     });
 
-     document.getElementById('confirmDeleteSiteBtn').addEventListener('click', function() {
+    document.getElementById('confirmDeleteSiteBtn').addEventListener('click', function() {
         if (currentSiteId) {
             deleteSite(currentSiteId);
         }
