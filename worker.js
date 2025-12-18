@@ -8667,8 +8667,37 @@ p, div, span:not(.badge), td, th, .btn, button, a:not(.navbar-brand),
 `;
 }
 
+// Markers for extracting inline client scripts embedded in comment blocks
+const INLINE_START = '/*__INLINE__START__';
+const INLINE_END = '__INLINE__END__*/';
+const multilineCache = new Map();
+
+/**
+ * Extracts inline client-side code wrapped between INLINE_START/INLINE_END markers
+ * inside a function comment block.
+ * @param {Function} fn Function containing the comment-wrapped content.
+ * @returns {string} Extracted content between the markers.
+ * @throws {Error} If markers are missing or ordered incorrectly.
+ */
+function extractMultiline(fn) {
+  if (multilineCache.has(fn)) {
+    return multilineCache.get(fn);
+  }
+  const source = fn.toString();
+  const start = source.indexOf(INLINE_START);
+  const contentStart = start + INLINE_START.length;
+  const end = source.indexOf(INLINE_END, contentStart);
+  if (start === -1 || end === -1 || end < contentStart) {
+    throw new Error('Failed to extract inline content: missing or misplaced markers');
+  }
+  const content = source.slice(contentStart, end).trim();
+  multilineCache.set(fn, content);
+  return content;
+}
+
 function getMainJs() {
-  return `// main.js - 首页面的JavaScript逻辑
+  return extractMultiline(() => {
+    /*__INLINE__START__// main.js - 首页面的JavaScript逻辑
 
 // Global variables
 let vpsUpdateInterval = null;
@@ -11903,10 +11932,11 @@ async function renderZoomedTrafficChart(serverId) {
         chartContainer.innerHTML = `<div class="text-center p-5 text-danger">加载图表失败: ${error.message}</div>`;
     }
 }
-`;
+__INLINE__END__*/});
 }
 function getLoginJs() {
-  return `// login.js - 登录页面的JavaScript逻辑
+  return extractMultiline(() => {
+    /*__INLINE__START__// login.js - 登录页面的JavaScript逻辑
 
 // ==================== 统一API请求工具 ====================
 // 注意：此处的apiRequest函数已移至主要位置，避免重复定义
@@ -12245,13 +12275,14 @@ window.addEventListener('storage', function(e) {
                     }
     }
 });
-`;
+__INLINE__END__*/});
 }
 // Helper functions for updating server/site settings are no longer needed for frequent notifications
 // as that feature is removed.
 
 function getAdminJs() {
-  return `// admin.js - 管理后台的JavaScript逻辑
+  return extractMultiline(() => {
+    /*__INLINE__START__// admin.js - 管理后台的JavaScript逻辑
 
 // ==================== 统一API请求工具 ====================
 
@@ -14728,5 +14759,5 @@ async function importSites(file) {
         if (fileInput) fileInput.value = '';
     }
 }
-`;
+__INLINE__END__*/});
 }
