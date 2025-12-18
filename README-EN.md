@@ -8,10 +8,10 @@ Panel Demo: https://tz.okr.pub/
 PC Frontend:
  
 
-![image](https://github.com/fanbang/cf-vps-monitor/blob/main/pic/newFront.jpg)
-![image](https://github.com/fanbang/cf-vps-monitor/blob/main/pic/online.jpg)
-![image](https://github.com/fanbang/cf-vps-monitor/blob/main/pic/trac.jpg)
-![image](https://github.com/fanbang/cf-vps-monitor/blob/main/pic/cpu.jpg)
+![image](https://github.com/C018/cf-vps-monitor/blob/main/pic/newFront.jpg)
+![image](https://github.com/C018/cf-vps-monitor/blob/main/pic/online.jpg)
+![image](https://github.com/C018/cf-vps-monitor/blob/main/pic/trac.jpg)
+![image](https://github.com/C018/cf-vps-monitor/blob/main/pic/cpu.jpg)
  Mobile Frontend:
 
 ![image](https://github.com/C018/cf-vps-monitor/blob/main/pic/newmobile.jpg)
@@ -171,6 +171,7 @@ The installation script itself also provides management functions:
 ### Sponsorship Welcome🤣:
 
 [![Powered by cloudflare](https://cf-assets.www.cloudflare.com/slt3lc6tev37/6EYsdkdfBcHtgPmgp3YtkD/0b203affd2053988264b9253b13de6b3/logo-thumbnail.png)](https://www.cloudflare.com/ "Powered by cloudflare - Free workers for Open Source")
+
 
 
 
