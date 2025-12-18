@@ -1601,10 +1601,6 @@ async function handleAuthRoutes(path, method, request, env, corsHeaders, clientI
 
 // 基于服务器信息构建Ping目标地址
 function resolveServerPingTarget(server) {
-  if (server?.realtime_endpoint && validateInput(server.realtime_endpoint, 'url', 2048)) {
-    return server.realtime_endpoint.trim();
-  }
-
   if (server?.name) {
     const hostname = server.name.trim();
     const candidate = `https://${hostname}`;
@@ -2539,61 +2535,18 @@ async function handleVpsRoutes(path, method, request, env, corsHeaders, ctx) {
       return createErrorResponse('Invalid server ID', '无效的服务器ID', 400, corsHeaders);
     }
 
-    // 验证服务器是否存在，并获取实时监控端点配置
-    const serverResult = await env.DB.prepare('SELECT id, name, realtime_endpoint FROM servers WHERE id = ?').bind(serverId).first();
+    // 验证服务器是否存在
+    const serverResult = await env.DB.prepare('SELECT id, name FROM servers WHERE id = ?').bind(serverId).first();
     if (!serverResult) {
       return createErrorResponse('Server not found', '服务器不存在', 404, corsHeaders);
     }
 
-    // 如果配置了实时端点，尝试直接访问VPS
-    if (serverResult.realtime_endpoint) {
-      if (!validateInput(serverResult.realtime_endpoint, 'url', 2048)) {
-        return createErrorResponse('Invalid endpoint URL', '实时监控端点格式非法或指向受限地址', 400, corsHeaders);
-      }
-      try {
-        const response = await fetch(serverResult.realtime_endpoint, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'User-Agent': 'VPS-Monitor/1.0'
-          },
-          signal: AbortSignal.timeout(5000) // 5秒超时
-        });
-
-        const data = await response.json().catch(() => null);
-        const parsedData = data?.data ?? data;
-
-        if (response.ok && parsedData !== undefined && parsedData !== null) {
-          return createApiResponse({
-            success: true,
-            source: 'real',
-            data: parsedData
-          }, 200, corsHeaders);
-        }
-
-        const responsePayload = (parsedData === undefined || parsedData === null)
-          ? 'vps接口数据获取失败'
-          : parsedData;
-        const statusCode = response.status >= 100 ? response.status : 502;
-        return createApiResponse({
-          success: false,
-          source: 'real',
-          data: responsePayload
-        }, statusCode, corsHeaders);
-      } catch (fetchError) {
-        return createApiResponse({
-          success: false,
-          source: 'real',
-          data: 'vps接口数据获取失败'
-        }, 502, corsHeaders);
-      }
-    } else {
-      return createApiResponse({
-        success: false,
-        source: 'real',
-        data: '未配置实时监控api'
-      }, 200, corsHeaders);
-    }
+    // 实时监控端口已下线，统一返回提示，避免直接访问服务器IP
+    return createApiResponse({
+      success: false,
+      source: 'panel',
+      data: '实时监控接口已移除，请通过面板查看数据'
+    }, 200, corsHeaders);
   }
 
   // VPS状态查询（公开，无需认证）
@@ -6940,10 +6893,6 @@ function getAdminHtml() {
                         </div>
                         <!-- Removed serverEnableFrequentNotifications checkbox -->
 
-                        <div class="mb-3">
-                            <label for="vpsRealApi" class="form-label">实时监控vps api（ http://IP:8999）</label>
-                            <input type="text" class="form-control" id="vpsRealApi"   >
-                        </div>
                         <div id="serverIdDisplayGroup" class="mb-3 d-none">
                             <label for="serverIdDisplay" class="form-label">服务器ID</label>
                             <div class="input-group">
@@ -13220,7 +13169,6 @@ function showServerModal() {
     // 重置表单和标记
     document.getElementById('serverForm').reset();
     document.getElementById('serverId').value = '';
-    document.getElementById('vpsRealApi').value = '';
     document.getElementById('apiKeyGroup').classList.add('d-none');
     document.getElementById('serverIdDisplayGroup').classList.add('d-none');
     document.getElementById('workerUrlDisplayGroup').classList.add('d-none');
@@ -13243,7 +13191,6 @@ function editServer(serverId) {
     document.getElementById('serverId').value = server.id;
     document.getElementById('serverName').value = server.name;
     document.getElementById('serverDescription').value = server.description || '';
-    document.getElementById('vpsRealApi').value = server.realtime_endpoint || '';
     document.getElementById('apiKeyGroup').classList.add('d-none');
     document.getElementById('serverIdDisplayGroup').classList.add('d-none');
     document.getElementById('workerUrlDisplayGroup').classList.add('d-none');
@@ -13261,7 +13208,6 @@ async function saveServer() {
     const serverId = document.getElementById('serverId').value;
     const serverName = document.getElementById('serverName').value.trim();
     const serverDescription = document.getElementById('serverDescription').value.trim();
-    const vpsRealApi = document.getElementById('vpsRealApi').value.trim(); // Removed
 
     if (!serverName) {
         showToast('warning', '服务器名称不能为空');
@@ -13277,8 +13223,7 @@ async function saveServer() {
                 method: 'PUT',
                 body: JSON.stringify({
                     name: serverName,
-                    description: serverDescription,
-		    realtime_endpoint: vpsRealApi
+                    description: serverDescription
                 })
             });
         } else {
@@ -13287,8 +13232,7 @@ async function saveServer() {
                 method: 'POST',
                 body: JSON.stringify({
                     name: serverName,
-                    description: serverDescription,
-		    realtime_endpoint: vpsRealApi
+                    description: serverDescription
                 })
             });
         }
