@@ -6993,25 +6993,25 @@ function getAdminHtml() {
         </div>
     </div>
 
-    <!-- 网站删除确认模态框 -->
-    <div class="modal fade" id="deleteSiteModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">确认删除网站监控</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>确定要停止监控网站 "<span id="deleteSiteName"></span>" (<span id="deleteSiteUrl"></span>) 吗？</p>
-                    <p class="text-danger">此操作不可逆。</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteSiteBtn">删除</button>
-                </div>
+<!-- 网站删除确认模态框 -->
+<div class="modal fade" id="deleteSiteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除网站监控</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要停止监控网站 "<span id="deleteSiteName"></span>" (<span id="deleteSiteUrl"></span>) 吗？</p>
+                <p class="text-danger">此操作不可逆。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteSiteBtn">删除</button>
             </div>
         </div>
     </div>
+</div>
 
     <!-- 修改密码模态框 -->
     <div class="modal fade" id="passwordModal" tabindex="-1">
