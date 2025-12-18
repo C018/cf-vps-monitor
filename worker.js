@@ -5978,76 +5978,10 @@ function getIndexHtml() {
                     </div>
                 </div>
 
-                <!-- 分隔线 -->
-                <hr class="my-4">
-
-                <!-- Ping节点展示 -->
-                <div>
-                    <h5 class="card-title mb-3">
-                        <i class="bi bi-diagram-3 me-2"></i>Ping节点
-                    </h5>
-
-                    <div id="publicNoPingNodes" class="alert alert-info d-none">
-                        暂无Ping节点，请在管理后台添加并启用节点。
-                    </div>
-
-                    <!-- 桌面端表格视图 -->
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover align-middle">
-                            <thead>
-                                <tr>
-                                    <th>节点名称</th>
-                                    <th>目标地址</th>
-                                    <th>损失率</th>
-                                    <th>最近</th>
-                                    <th>平均</th>
-                                    <th>最佳</th>
-                                    <th>最差</th>
-                                    <th>标准差</th>
-                                    <th>最后更新</th>
-                                    <th>描述</th>
-                                </tr>
-                            </thead>
-                            <tbody id="publicPingNodesTableBody">
-                                <tr>
-                                    <td colspan="10" class="text-center">加载中...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- 移动端卡片视图 -->
-                    <div class="mobile-card-container" id="publicMobilePingNodes">
-                        <div class="text-center p-3">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">加载中...</span>
-                            </div>
-                            <div class="mt-2">加载Ping节点...</div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
     <!-- End Website Status Section -->
-
-    <!-- Ping 节点延迟图表模态框 -->
-    <div class="modal fade" id="pingNodeChartModal" tabindex="-1" aria-labelledby="pingNodeChartModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="pingNodeChartModalLabel"><i class="bi bi-graph-up me-2"></i>Ping 节点延迟</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="pingNodeChartContainer" style="height: 240px; border: 1px solid #ddd; border-radius: 4px; position: relative; background-color: #f8f9fa;">
-                        <div class="text-center p-3 text-muted">加载中...</div>
-                    </div>
-                    <div id="pingNodeChartSummary" class="mt-2 text-muted small"></div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Server Detailed row template (hidden by default) -->
     <template id="serverDetailsTemplate">
@@ -6940,74 +6874,6 @@ function getAdminHtml() {
         </div>
     </div>
 
-    <!-- Ping节点管理部分 -->
-    <div class="container mt-4">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <div class="mb-4">
-                    <div class="admin-header-row mb-3">
-                        <div class="admin-header-title">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-diagram-3 me-2"></i>Ping节点管理
-                            </h5>
-                        </div>
-                        <div class="admin-header-content">
-                            <div class="admin-actions-group desktop-only">
-                                <button type="button" class="btn btn-success me-2" onclick="showPingNodeModal()">
-                                    <i class="bi bi-plus-circle me-1"></i>添加节点
-                                </button>
-                                <button type="button" class="btn btn-outline-info" onclick="refreshPingNodes()">
-                                    <i class="bi bi-arrow-clockwise me-1"></i>刷新
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="noPingNodes" class="alert alert-info d-none">
-                        暂无ping测试节点。点击"添加节点"来添加第一个节点。
-                    </div>
-
-                    <!-- 桌面端表格视图 -->
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover align-middle">
-                            <thead>
-                                <tr>
-                                    <th>节点名称</th>
-                                    <th>目标地址</th>
-                                    <th>描述</th>
-                                    <th>状态</th>
-                                    <th>创建时间</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pingNodesTable">
-                                <!-- 动态填充 -->
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- 移动端卡片视图 -->
-                    <div class="mobile-card-container" id="mobilePingNodeContainer">
-                        <div class="text-center p-3">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">加载中...</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 移动端操作按钮 -->
-                    <div class="admin-actions-group mobile-only">
-                        <button type="button" class="btn btn-success me-2" onclick="showPingNodeModal()">
-                            <i class="bi bi-plus-circle me-1"></i>添加节点
-                        </button>
-                        <button type="button" class="btn btn-outline-info" onclick="refreshPingNodes()">
-                            <i class="bi bi-arrow-clockwise me-1"></i>刷新
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     <!-- Global Settings Section (Now integrated above Server Management List) -->
     <!-- The form is now part of the header for Server Management -->
     <!-- End Global Settings Section -->
@@ -7107,48 +6973,6 @@ function getAdminHtml() {
         </div>
     </div>
 
-    <!-- Ping节点模态框 -->
-    <div class="modal fade" id="pingNodeModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="pingNodeModalTitle">添加Ping节点</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="pingNodeForm">
-                        <input type="hidden" id="pingNodeId">
-                        <div class="mb-3">
-                            <label for="pingNodeName" class="form-label">节点名称</label>
-                            <input type="text" class="form-control" id="pingNodeName" placeholder="如：阿里云北京" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="pingNodeTarget" class="form-label">目标地址</label>
-                            <input type="text" class="form-control" id="pingNodeTarget" placeholder="如：8.8.8.8 或 www.google.com" required>
-                            <div class="form-text">支持IP地址或域名</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="pingNodeDescription" class="form-label">描述（可选）</label>
-                            <textarea class="form-control" id="pingNodeDescription" rows="2" placeholder="节点说明或备注"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="pingNodeEnabled" checked>
-                                <label class="form-check-label" for="pingNodeEnabled">
-                                    启用此节点
-                                </label>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-                    <button type="button" class="btn btn-primary" id="savePingNodeBtn">保存</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- 服务器删除确认模态框 -->
     <div class="modal fade" id="deleteModal" tabindex="-1">
         <div class="modal-dialog">
@@ -7184,26 +7008,6 @@ function getAdminHtml() {
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
                     <button type="button" class="btn btn-danger" id="confirmDeleteSiteBtn">删除</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Ping节点删除确认模态框 -->
-    <div class="modal fade" id="deletePingNodeModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">确认删除Ping节点</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>确定要删除ping节点 "<span id="deletePingNodeName"></span>" 吗？</p>
-                    <p class="text-danger">此操作不可逆，所有相关的ping测试数据也将被删除。</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeletePingNodeBtn">删除</button>
                 </div>
             </div>
         </div>
@@ -9111,7 +8915,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load initial data
     loadAllServerStatuses();
     loadAllSiteStatuses();
-    loadPublicPingNodes();
 
     // Initialize periodic updates separately
         initializeVpsDataUpdates();
@@ -12645,8 +12448,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     loadServerList();
     // 加载监控网站列表
     loadSiteList();
-    // 加载Ping节点列表
-    refreshPingNodes();
     // 加载Telegram设置
     loadTelegramSettings();
     // 加载背景设置
@@ -12882,16 +12683,6 @@ function initEventListeners() {
      document.getElementById('confirmDeleteSiteBtn').addEventListener('click', function() {
         if (currentSiteId) {
             deleteSite(currentSiteId);
-        }
-    });
-
-    // Ping节点事件
-    document.getElementById('savePingNodeBtn').addEventListener('click', function() {
-        savePingNode();
-    });
-    document.getElementById('confirmDeletePingNodeBtn').addEventListener('click', function() {
-        if (currentPingNodeId) {
-            deletePingNode(currentPingNodeId);
         }
     });
 
