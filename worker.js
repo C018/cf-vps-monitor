@@ -9520,18 +9520,18 @@ function resetCpuChart(serverId) {
 const pingHistoryStore = {};
 
 function resetPingChart(serverId) {
-    const chartContainer = document.getElementById(`ping-chart-${serverId}`);
+    const chartContainer = document.getElementById(\`ping-chart-\${serverId}\`);
     if (chartContainer) {
-        chartContainer.innerHTML = `
+        chartContainer.innerHTML = \`
             <div class="text-center p-3 text-muted" style="font-size: 0.875rem;">
                 暂无延迟数据
             </div>
-        `;
+        \`;
     }
 }
 
 function renderPingChart(serverId) {
-    const chartContainer = document.getElementById(`ping-chart-${serverId}`);
+    const chartContainer = document.getElementById(\`ping-chart-\${serverId}\`);
     const history = pingHistoryStore[serverId] || [];
     if (!chartContainer) return;
     if (!history.length) {
@@ -9579,7 +9579,7 @@ function renderPingChart(serverId) {
         label.setAttribute('text-anchor', 'end');
         label.setAttribute('font-size', '8');
         label.setAttribute('fill', '#666');
-        label.textContent = `${Math.round(maxLatency * (1 - i / 4))} ms`;
+        label.textContent = \`\${Math.round(maxLatency * (1 - i / 4))} ms\`;
         svg.appendChild(label);
     }
 
@@ -9592,7 +9592,7 @@ function renderPingChart(serverId) {
             : padding.left + (index / lastIndex) * chartWidth;
         const latency = Math.max(0, item.latency || 0);
         const y = padding.top + chartHeight - (latency / maxLatency) * chartHeight;
-        path += index === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
+        path += index === 0 ? \`M \${x} \${y}\` : \` L \${x} \${y}\`;
     });
 
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -9615,17 +9615,17 @@ function renderPingChart(serverId) {
 }
 
 async function loadPingHistory(serverId) {
-    const chartContainer = document.getElementById(`ping-chart-${serverId}`);
+    const chartContainer = document.getElementById(\`ping-chart-\${serverId}\`);
     if (chartContainer) {
-        chartContainer.innerHTML = `
+        chartContainer.innerHTML = \`
             <div class="text-center p-3 text-muted" style="font-size: 0.875rem;">
                 正在加载延迟数据...
             </div>
-        `;
+        \`;
     }
 
     try {
-        const response = await fetch(`/api/servers/${serverId}/ping/history?period=24h`);
+        const response = await fetch(\`/api/servers/\${serverId}/ping/history?period=24h\`);
         if (response.ok) {
             const data = await response.json();
             const history = (data.ping_history || []).map(item => ({
@@ -9644,8 +9644,8 @@ async function loadPingHistory(serverId) {
 }
 
 async function runPingTest(serverId) {
-    const latencyDisplay = document.getElementById(`ping-latency-${serverId}`);
-    const testButton = document.getElementById(`ping-test-btn-${serverId}`);
+    const latencyDisplay = document.getElementById(\`ping-latency-\${serverId}\`);
+    const testButton = document.getElementById(\`ping-test-btn-\${serverId}\`);
 
     if (latencyDisplay) {
         latencyDisplay.textContent = '正在测试...';
@@ -9656,7 +9656,7 @@ async function runPingTest(serverId) {
     }
 
     try {
-        const response = await fetch(`/api/servers/${serverId}/ping`, { method: 'POST' });
+        const response = await fetch(\`/api/servers/\${serverId}/ping\`, { method: 'POST' });
         let data;
         try {
             data = await response.json();
@@ -9668,7 +9668,7 @@ async function runPingTest(serverId) {
             const latency = data.ping_time_ms;
             if (latencyDisplay) {
                 latencyDisplay.textContent = typeof latency === 'number'
-                    ? `当前延迟：${latency} ms`
+                    ? \`当前延迟：\${latency} ms\`
                     : '未获取到延迟数据';
             }
         } else if (latencyDisplay) {
