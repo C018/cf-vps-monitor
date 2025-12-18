@@ -8674,7 +8674,7 @@ const INLINE_END = '__INLINE__END__*/';
 /**
  * Extracts inline client-side code wrapped between INLINE_START/INLINE_END markers
  * inside a function comment block.
- * @param {Function} fn Arrow function containing the comment-wrapped content.
+ * @param {Function} fn Function containing the comment-wrapped content.
  * @returns {string} Extracted content between the markers.
  * @throws {Error} If markers are missing or ordered incorrectly.
  */
@@ -8682,7 +8682,7 @@ function extractMultiline(fn) {
   const source = fn.toString();
   const start = source.indexOf(INLINE_START);
   const end = source.indexOf(INLINE_END, start + INLINE_START.length);
-  if (start === -1 || end === -1 || end < start + INLINE_START.length) {
+  if (start === -1 || end === -1 || end <= start) {
     throw new Error('Failed to extract inline content: missing or misplaced markers');
   }
   return source.slice(start + INLINE_START.length, end).trim();
