@@ -1599,50 +1599,6 @@ async function handleAuthRoutes(path, method, request, env, corsHeaders, clientI
   return null; // 不匹配此模块的路由
 }
 
-// 基于服务器信息构建Ping目标地址
-function resolveServerPingTarget(server) {
-  if (server?.name) {
-    const hostname = server.name.trim();
-    const candidate = `https://${hostname}`;
-    if (validateInput(candidate, 'url', 2048)) {
-      return candidate;
-    }
-  }
-
-  return null;
-}
-
-// 确保存在对应的Ping节点（使用服务器名称对齐）
-async function ensureServerPingNode(env, server, targetAddress) {
-  const nodeId = `server-ping-${server.id}`;
-  const now = Math.floor(Date.now() / 1000);
-
-  const existing = await env.DB.prepare('SELECT id FROM ping_nodes WHERE id = ?')
-    .bind(nodeId)
-    .first();
-
-  if (!existing) {
-    await env.DB.prepare(`
-      INSERT INTO ping_nodes (id, name, target_address, description, enabled, created_at, sort_order)
-      VALUES (?, ?, ?, ?, 1, ?, 0)
-    `).bind(
-      nodeId,
-      server.name || server.id,
-      targetAddress,
-      '自动创建的服务器Ping节点',
-      now
-    ).run();
-  } else {
-    await env.DB.prepare(`
-      UPDATE ping_nodes
-      SET name = ?, target_address = ?, enabled = 1
-      WHERE id = ?
-    `).bind(server.name || server.id, targetAddress, nodeId).run();
-  }
-
-  return nodeId;
-}
-
 // 服务器管理路由处理器
 async function handleServerRoutes(path, method, request, env, corsHeaders) {
   // 获取服务器列表（公开，支持管理员和游客模式）
@@ -1702,7 +1658,7 @@ async function handleServerRoutes(path, method, request, env, corsHeaders) {
     }
 
     try {
-      const { name, description, realtime_endpoint } = await parseJsonSafely(request);
+      const { name, description } = await parseJsonSafely(request);
       if (!validateInput(name, 'serverName')) {
         return createErrorResponse(
           'Invalid server name',
@@ -1712,38 +1668,7 @@ async function handleServerRoutes(path, method, request, env, corsHeaders) {
         );
       }
 
-      // 验证实时监控端点URL格式
-      let realtimeEndpoint = null;
-      if (realtime_endpoint && realtime_endpoint.trim()) {
-        const endpoint = realtime_endpoint.trim();
-        if (!validateInput(endpoint, 'url', 2048)) {
-          return createErrorResponse(
-            'Invalid endpoint URL',
-            '实时监控端点必须是合法的公共HTTP/HTTPS地址',
-            400,
-            corsHeaders
-          );
-        }
-        try {
-          const url = new URL(endpoint);
-          if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-            return createErrorResponse(
-              'Invalid endpoint URL',
-              '实时监控端点必须是有效的HTTP/HTTPS URL',
-              400,
-              corsHeaders
-            );
-          }
-          realtimeEndpoint = endpoint;
-        } catch (urlError) {
-          return createErrorResponse(
-            'Invalid endpoint URL',
-            '实时监控端点URL格式无效',
-            400,
-            corsHeaders
-          );
-        }
-      }
+      const realtimeEndpoint = null;
 
       const serverId = Math.random().toString(36).substring(2, 8);
       // 生成32字节强随机API密钥
@@ -1793,7 +1718,7 @@ async function handleServerRoutes(path, method, request, env, corsHeaders) {
         );
       }
 
-      const { name, description, realtime_endpoint } = await request.json();
+      const { name, description } = await request.json();
       if (!validateInput(name, 'serverName')) {
         return createErrorResponse(
           'Invalid server name',
@@ -1803,38 +1728,7 @@ async function handleServerRoutes(path, method, request, env, corsHeaders) {
         );
       }
 
-      // 验证实时监控端点URL格式
-      let realtimeEndpoint = null;
-      if (realtime_endpoint && realtime_endpoint.trim()) {
-        const endpoint = realtime_endpoint.trim();
-        if (!validateInput(endpoint, 'url', 2048)) {
-          return createErrorResponse(
-            'Invalid endpoint URL',
-            '实时监控端点必须是合法的公共HTTP/HTTPS地址',
-            400,
-            corsHeaders
-          );
-        }
-        try {
-          const url = new URL(endpoint);
-          if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-            return createErrorResponse(
-              'Invalid endpoint URL',
-              '实时监控端点必须是有效的HTTP/HTTPS URL',
-              400,
-              corsHeaders
-            );
-          }
-          realtimeEndpoint = endpoint;
-        } catch (urlError) {
-          return createErrorResponse(
-            'Invalid endpoint URL',
-            '实时监控端点URL格式无效',
-            400,
-            corsHeaders
-          );
-        }
-      }
+      const realtimeEndpoint = null;
 
       const info = await env.DB.prepare(`
         UPDATE servers SET name = ?, description = ?, realtime_endpoint = ? WHERE id = ?
@@ -2012,365 +1906,17 @@ async function handleServerRoutes(path, method, request, env, corsHeaders) {
     }
   }
 
-  // 获取服务器的ping结果历史
-  if (path.match(/^\/api\/servers\/([^\/]+)\/ping\/history$/) && method === 'GET') {
-    try {
-      const serverId = path.split('/')[3];
-
-      // 权限：公开服务器可直接访问，非公开需要管理员
-      const user = await authenticateRequestOptional(request, env);
-      if (!user) {
-        const server = await env.DB.prepare('SELECT is_public FROM servers WHERE id = ?')
-          .bind(serverId)
-          .first();
-        if (!server || !server.is_public) {
-          return createErrorResponse('Not Found', '服务器不存在或未公开', 404, corsHeaders);
-        }
-      }
-
-      const url = new URL(request.url);
-      const period = url.searchParams.get('period') || '24h';
-
-      let timeRange;
-      const now = Math.floor(Date.now() / 1000);
-
-      switch (period) {
-        case '1h': timeRange = now - 3600; break;
-        case '6h': timeRange = now - 21600; break;
-        case '12h': timeRange = now - 43200; break;
-        case '24h': timeRange = now - 86400; break;
-        case '7d': timeRange = now - 604800; break;
-        case '30d': timeRange = now - 2592000; break;
-        default: timeRange = now - 86400;
-      }
-
-      const { results } = await env.DB.prepare(`
-        SELECT pr.timestamp, pr.ping_time_ms, pr.status, pr.error_message,
-               pn.name as node_name, pn.target_address
-        FROM ping_results pr
-        JOIN ping_nodes pn ON pr.node_id = pn.id
-        WHERE pr.server_id = ? AND pr.timestamp >= ?
-        ORDER BY pr.timestamp DESC
-        LIMIT 1000
-      `).bind(serverId, timeRange).all();
-
-      return createSuccessResponse({ ping_history: results }, corsHeaders);
-    } catch (error) {
-      return handleDbError(error, corsHeaders, '获取ping历史记录');
-    }
-  }
-
-  // 执行服务器Ping并记录结果
-  if (path.match(/^\/api\/servers\/([^\/]+)\/ping$/) && (method === 'GET' || method === 'POST')) {
-    try {
-      const serverId = path.split('/')[3];
-
-      // 权限：公开服务器可访问，非公开需要管理员
-      let server = await env.DB.prepare('SELECT id, name, realtime_endpoint, is_public FROM servers WHERE id = ?')
-        .bind(serverId)
-        .first();
-      if (!server) {
-        return createErrorResponse('Not Found', '服务器不存在', 404, corsHeaders);
-      }
-      if (!server.is_public) {
-        const user = await authenticateAdmin(request, env);
-        if (!user) {
-          return createErrorResponse('Unauthorized', '需要管理员权限', 401, corsHeaders);
-        }
-      }
-
-      const targetAddress = resolveServerPingTarget(server);
-      if (!targetAddress) {
-        return createErrorResponse('Invalid target', '服务器未配置可用的Ping目标', 400, corsHeaders);
-      }
-
-      let status = 'success';
-      let pingMs = null;
-      let errorMessage = null;
-
-      let start = Date.now();
-      try {
-        let response = await fetch(targetAddress, {
-          method: 'HEAD',
-          signal: AbortSignal.timeout(5000)
-        });
-        pingMs = Date.now() - start;
-
-        if (response.status === 405) {
-          start = Date.now();
-          response = await fetch(targetAddress, {
-            method: 'GET',
-            redirect: 'manual',
-            signal: AbortSignal.timeout(5000)
-          });
-          pingMs = Date.now() - start;
-        }
-
-        if (!response.ok) {
-          status = 'error';
-          errorMessage = `HTTP ${response.status}`;
-        }
-      } catch (err) {
-        pingMs = Date.now() - start;
-        status = 'error';
-        if (err?.name === 'TimeoutError') {
-          errorMessage = 'Ping超时';
-        } else {
-          errorMessage = err?.message || 'Ping失败';
-        }
-      }
-
-      const nodeId = await ensureServerPingNode(env, server, targetAddress);
-      const timestamp = Math.floor(Date.now() / 1000);
-
-      await env.DB.prepare(`
-        INSERT INTO ping_results (server_id, node_id, timestamp, ping_time_ms, status, error_message)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).bind(serverId, nodeId, timestamp, pingMs, status, errorMessage).run();
-
-      return createSuccessResponse({
-        ping_time_ms: pingMs,
-        status,
-        target: targetAddress,
-        node_id: nodeId
-      }, corsHeaders);
-    } catch (error) {
-      return handleDbError(error, corsHeaders, '执行ping测试');
-    }
+  // Ping功能已移除
+  if (path.match(/^\/api\/servers\/([^\/]+)\/ping(\/history)?$/)) {
+    return createErrorResponse('Feature removed', 'Ping功能已移除', 410, corsHeaders);
   }
 
   return null; // 不匹配此模块的路由
 }
 
-// Ping节点管理路由处理器
+// Ping节点管理路由处理器（功能已移除）
 async function handlePingNodeRoutes(path, method, request, env, corsHeaders) {
-  // 获取指定ping节点的历史记录（公开）
-  if (path.match(/^\/api\/ping-nodes\/([^\/]+)\/history$/) && method === 'GET') {
-    try {
-      const nodeId = extractPathSegment(path, -2);
-      if (!nodeId) {
-        return createErrorResponse('Invalid node id', '无效的Ping节点ID', 400, corsHeaders);
-      }
-
-      const url = new URL(request.url);
-      const period = url.searchParams.get('period') || '24h';
-      const now = Math.floor(Date.now() / 1000);
-      let timeRange = now - 86400; // 默认24小时
-      switch (period) {
-        case '1h': timeRange = now - 3600; break;
-        case '6h': timeRange = now - 21600; break;
-        case '12h': timeRange = now - 43200; break;
-        case '7d': timeRange = now - 604800; break;
-        case '30d': timeRange = now - 2592000; break;
-        default: timeRange = now - 86400;
-      }
-
-      const { results } = await env.DB.prepare(`
-        SELECT timestamp, ping_time_ms, status, error_message, server_id
-        FROM ping_results
-        WHERE node_id = ? AND timestamp >= ?
-        ORDER BY timestamp DESC
-        LIMIT 1000
-      `).bind(nodeId, timeRange).all();
-
-      return createSuccessResponse({ ping_history: results || [] }, corsHeaders);
-    } catch (error) {
-      return handleDbError(error, corsHeaders, '获取ping节点历史记录');
-    }
-  }
-
-  // 公开获取启用的ping节点列表（首页展示）
-  if (path === '/api/ping-nodes' && method === 'GET') {
-    try {
-      const now = Math.floor(Date.now() / 1000);
-      const startTime = now - 86400; // 24小时统计
-      const { results } = await env.DB.prepare(`
-        SELECT 
-          pn.id, pn.name, pn.target_address, pn.description, pn.enabled, pn.created_at,
-          (SELECT COUNT(*) FROM ping_results pr WHERE pr.node_id = pn.id AND pr.timestamp >= ?) AS total_pings,
-          (SELECT COUNT(*) FROM ping_results pr WHERE pr.node_id = pn.id AND pr.timestamp >= ? AND pr.status = 'success') AS success_pings,
-          (SELECT pr.ping_time_ms FROM ping_results pr WHERE pr.node_id = pn.id ORDER BY pr.timestamp DESC LIMIT 1) AS recent_latency,
-          (SELECT pr.timestamp FROM ping_results pr WHERE pr.node_id = pn.id ORDER BY pr.timestamp DESC LIMIT 1) AS last_timestamp,
-          (SELECT MIN(pr.ping_time_ms) FROM ping_results pr WHERE pr.node_id = pn.id AND pr.timestamp >= ? AND pr.status = 'success') AS best_latency,
-          (SELECT MAX(pr.ping_time_ms) FROM ping_results pr WHERE pr.node_id = pn.id AND pr.timestamp >= ? AND pr.status = 'success') AS worst_latency,
-          (SELECT AVG(pr.ping_time_ms) FROM ping_results pr WHERE pr.node_id = pn.id AND pr.timestamp >= ? AND pr.status = 'success') AS avg_latency,
-          (SELECT SUM(pr.ping_time_ms * pr.ping_time_ms) FROM ping_results pr WHERE pr.node_id = pn.id AND pr.timestamp >= ? AND pr.status = 'success') AS sum_latency_sq
-        FROM ping_nodes pn
-        WHERE pn.enabled = 1
-        ORDER BY pn.sort_order IS NULL, pn.sort_order ASC, pn.created_at ASC
-      `).bind(startTime, startTime, startTime, startTime, startTime, startTime).all();
-
-      const nodesWithStats = (results || []).map(node => {
-        const total = Number(node.total_pings || 0);
-        const success = Number(node.success_pings || 0);
-        const lossRate = total > 0 ? ((total - success) / total) * 100 : null;
-        const averageLatency = node.avg_latency !== null && node.avg_latency !== undefined ? Number(node.avg_latency) : null;
-        const sumLatencySq = node.sum_latency_sq !== null && node.sum_latency_sq !== undefined ? Number(node.sum_latency_sq) : null;
-        let stdDev = null;
-        if (success > 0 && averageLatency !== null && sumLatencySq !== null) {
-          const variance = sumLatencySq / success - Math.pow(averageLatency, 2);
-          stdDev = variance > 0 ? Math.sqrt(variance) : 0;
-        }
-
-        return {
-          ...node,
-          loss_rate: lossRate,
-          average_latency: averageLatency,
-          best_latency: node.best_latency !== null && node.best_latency !== undefined ? Number(node.best_latency) : null,
-          worst_latency: node.worst_latency !== null && node.worst_latency !== undefined ? Number(node.worst_latency) : null,
-          recent_latency: node.recent_latency !== null && node.recent_latency !== undefined ? Number(node.recent_latency) : null,
-          last_timestamp: node.last_timestamp || null,
-          std_dev_latency: stdDev
-        };
-      });
-
-      return createSuccessResponse({ ping_nodes: nodesWithStats, stats_period: 86400 }, corsHeaders);
-    } catch (error) {
-      return handleDbError(error, corsHeaders, '获取ping节点列表');
-    }
-  }
-
-  // 获取所有ping节点（管理员）
-  if (path === '/api/admin/ping-nodes' && method === 'GET') {
-    const user = await authenticateAdmin(request, env);
-    if (!user) {
-      return createErrorResponse('Unauthorized', '需要管理员权限', 401, corsHeaders);
-    }
-
-    try {
-      const { results } = await env.DB.prepare(`
-        SELECT id, name, target_address, description, enabled, created_at, sort_order
-        FROM ping_nodes 
-        ORDER BY sort_order ASC, created_at ASC
-      `).all();
-
-      return createSuccessResponse({ ping_nodes: results }, corsHeaders);
-    } catch (error) {
-      return handleDbError(error, corsHeaders, '获取ping节点列表');
-    }
-  }
-
-  // 添加ping节点（管理员）
-  if (path === '/api/admin/ping-nodes' && method === 'POST') {
-    const user = await authenticateAdmin(request, env);
-    if (!user) {
-      return createErrorResponse('Unauthorized', '需要管理员权限', 401, corsHeaders);
-    }
-
-    try {
-      const { name, target_address, description, enabled } = await request.json();
-
-      if (!name || !target_address) {
-        return createErrorResponse('Bad Request', '节点名称和目标地址不能为空', 400, corsHeaders);
-      }
-
-      const nodeId = generateId();
-      const now = Math.floor(Date.now() / 1000);
-
-      await env.DB.prepare(`
-        INSERT INTO ping_nodes (id, name, target_address, description, enabled, created_at, sort_order)
-        VALUES (?, ?, ?, ?, ?, ?, 0)
-      `).bind(nodeId, name, target_address, description || '', enabled ? 1 : 0, now).run();
-
-      return createSuccessResponse({ 
-        message: 'Ping节点添加成功',
-        node_id: nodeId
-      }, corsHeaders);
-    } catch (error) {
-      return handleDbError(error, corsHeaders, '添加ping节点');
-    }
-  }
-
-  // 更新ping节点（管理员）
-  if (path.match(/^\/api\/admin\/ping-nodes\/([^\/]+)$/) && method === 'PUT') {
-    const user = await authenticateAdmin(request, env);
-    if (!user) {
-      return createErrorResponse('Unauthorized', '需要管理员权限', 401, corsHeaders);
-    }
-
-    try {
-      const nodeId = path.split('/')[4];
-      const { name, target_address, description, enabled } = await request.json();
-
-      if (!name || !target_address) {
-        return createErrorResponse('Bad Request', '节点名称和目标地址不能为空', 400, corsHeaders);
-      }
-
-      const result = await env.DB.prepare(`
-        UPDATE ping_nodes 
-        SET name = ?, target_address = ?, description = ?, enabled = ?
-        WHERE id = ?
-      `).bind(name, target_address, description || '', enabled ? 1 : 0, nodeId).run();
-
-      if (result.changes === 0) {
-        return createErrorResponse('Not Found', 'Ping节点不存在', 404, corsHeaders);
-      }
-
-      return createSuccessResponse({ message: 'Ping节点更新成功' }, corsHeaders);
-    } catch (error) {
-      return handleDbError(error, corsHeaders, '更新ping节点');
-    }
-  }
-
-  // 删除ping节点（管理员）
-  if (path.match(/^\/api\/admin\/ping-nodes\/([^\/]+)$/) && method === 'DELETE') {
-    const user = await authenticateAdmin(request, env);
-    if (!user) {
-      return createErrorResponse('Unauthorized', '需要管理员权限', 401, corsHeaders);
-    }
-
-    try {
-      const nodeId = path.split('/')[4];
-
-      const result = await env.DB.prepare(`DELETE FROM ping_nodes WHERE id = ?`).bind(nodeId).run();
-
-      if (result.changes === 0) {
-        return createErrorResponse('Not Found', 'Ping节点不存在', 404, corsHeaders);
-      }
-
-      return createSuccessResponse({ message: 'Ping节点删除成功' }, corsHeaders);
-    } catch (error) {
-      return handleDbError(error, corsHeaders, '删除ping节点');
-    }
-  }
-
-  // 获取服务器的ping结果历史
-  if (path.match(/^\/api\/servers\/([^\/]+)\/ping\/history$/) && method === 'GET') {
-    try {
-      const serverId = path.split('/')[3];
-      const url = new URL(request.url);
-      const period = url.searchParams.get('period') || '24h';
-
-      let timeRange;
-      const now = Math.floor(Date.now() / 1000);
-      
-      switch (period) {
-        case '1h': timeRange = now - 3600; break;
-        case '6h': timeRange = now - 21600; break;
-        case '12h': timeRange = now - 43200; break;
-        case '24h': timeRange = now - 86400; break;
-        case '7d': timeRange = now - 604800; break;
-        case '30d': timeRange = now - 2592000; break;
-        default: timeRange = now - 86400;
-      }
-
-      const { results } = await env.DB.prepare(`
-        SELECT pr.timestamp, pr.ping_time_ms, pr.status, pr.error_message,
-               pn.name as node_name, pn.target_address
-        FROM ping_results pr
-        JOIN ping_nodes pn ON pr.node_id = pn.id
-        WHERE pr.server_id = ? AND pr.timestamp >= ?
-        ORDER BY pr.timestamp DESC
-        LIMIT 1000
-      `).bind(serverId, timeRange).all();
-
-      return createSuccessResponse({ ping_history: results }, corsHeaders);
-    } catch (error) {
-      return handleDbError(error, corsHeaders, '获取ping历史记录');
-    }
-  }
-
-  return null; // 不匹配此模块的路由
+  return createErrorResponse('Feature removed', 'Ping功能已移除', 410, corsHeaders);
 }
 
 // VPS监控路由处理器
@@ -9076,7 +8622,7 @@ function handleRowClick(event) {
 
         // If showing, populate with detailed data
         if (!detailsRow.classList.contains('d-none')) {
-            populateDetailsRow(serverId,realtime_endpoint, detailsRow);
+            populateDetailsRow(serverId, detailsRow);
         }
     }
 }
@@ -9479,232 +9025,8 @@ function resetCpuChart(serverId) {
     }
 }
 
-// Ping历史数据缓存
-const pingHistoryStore = {};
-
-function renderLatencyChart(history, container, emptyText = '暂无延迟数据') {
-    if (!container) return;
-    if (!history || !history.length) {
-        container.innerHTML = `<div class="text-center p-3 text-muted" style="font-size: 0.875rem;">${emptyText}</div>`;
-        return;
-    }
-
-    const data = history.slice().sort((a, b) => a.timestamp - b.timestamp);
-    const maxLatency = data.reduce((max, item) => Math.max(max, item.latency || 0), 0);
-    if (maxLatency <= 0) {
-        container.innerHTML = `<div class="text-center p-3 text-muted" style="font-size: 0.875rem;">${emptyText}</div>`;
-        return;
-    }
-
-    if (!container.style.position || container.style.position === 'static') {
-        container.style.position = 'relative';
-    }
-    container.innerHTML = '';
-
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('width', '100%');
-    svg.setAttribute('height', '100%');
-    svg.setAttribute('viewBox', '0 0 400 120');
-    svg.setAttribute('preserveAspectRatio', 'xMinYMid meet');
-    svg.style.position = 'absolute';
-    svg.style.width = '100%';
-    svg.style.height = '100%';
-    svg.style.left = '0px';
-
-    const padding = { top: 15, right: 20, bottom: 20, left: 35 };
-    const chartWidth = 400 - padding.left - padding.right;
-    const chartHeight = 120 - padding.top - padding.bottom;
-
-    for (let i = 0; i <= 4; i++) {
-        const y = padding.top + (i / 4) * chartHeight;
-        const gridLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        gridLine.setAttribute('x1', padding.left.toString());
-        gridLine.setAttribute('y1', y.toString());
-        gridLine.setAttribute('x2', (400 - padding.right).toString());
-        gridLine.setAttribute('y2', y.toString());
-        gridLine.setAttribute('stroke', '#e9ecef');
-        gridLine.setAttribute('stroke-width', '0.5');
-        svg.appendChild(gridLine);
-
-        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        label.setAttribute('x', (padding.left - 5).toString());
-        label.setAttribute('y', (y + 3).toString());
-        label.setAttribute('text-anchor', 'end');
-        label.setAttribute('font-size', '8');
-        label.setAttribute('fill', '#666');
-        label.textContent = `${Math.round(maxLatency * (1 - i / 4))} ms`;
-        svg.appendChild(label);
-    }
-
-    let path = '';
-    const isSinglePoint = data.length === 1;
-    const lastIndex = Math.max(1, data.length - 1);
-    data.forEach((item, index) => {
-        const x = isSinglePoint
-            ? padding.left + (chartWidth / 2)
-            : padding.left + (index / lastIndex) * chartWidth;
-        const latency = Math.max(0, item.latency || 0);
-        const y = padding.top + chartHeight - (latency / maxLatency) * chartHeight;
-        path += index === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
-    });
-
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    line.setAttribute('d', path);
-    line.setAttribute('fill', 'none');
-    line.setAttribute('stroke', '#0d6efd');
-    line.setAttribute('stroke-width', '2');
-    svg.appendChild(line);
-
-    const xLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    xLabel.setAttribute('x', '200');
-    xLabel.setAttribute('y', '115');
-    xLabel.setAttribute('text-anchor', 'middle');
-    xLabel.setAttribute('font-size', '10');
-    xLabel.setAttribute('fill', '#666');
-    xLabel.textContent = '时间';
-    svg.appendChild(xLabel);
-
-    container.appendChild(svg);
-
-    const latestLatency = data[data.length - 1]?.latency;
-    if (typeof latestLatency === 'number') {
-        const badge = document.createElement('div');
-        badge.style.cssText = 'position:absolute; top:6px; right:8px; background:rgba(13,110,253,0.1); color:#0d6efd; padding:2px 8px; border-radius:4px; font-size:11px;';
-        badge.textContent = `当前：${latestLatency.toFixed(2)} ms`;
-        container.appendChild(badge);
-    }
-}
-
-function resetPingChart(serverId) {
-    if (!isSafeId(serverId)) return;
-    const chartContainer = document.getElementById(`ping-chart-${serverId}`);
-    renderLatencyChart([], chartContainer, '暂无延迟数据');
-}
-
-function renderPingChart(serverId) {
-    if (!isSafeId(serverId)) return;
-    const chartContainer = document.getElementById(`ping-chart-${serverId}`);
-    renderLatencyChart(pingHistoryStore[serverId] || [], chartContainer, '暂无延迟数据');
-}
-
-async function loadPingHistory(serverId) {
-    if (!isSafeId(serverId)) return;
-
-    const chartContainer = document.getElementById(`ping-chart-${serverId}`);
-    if (chartContainer) {
-        chartContainer.innerHTML = `
-            <div class="text-center p-3 text-muted" style="font-size: 0.875rem;">
-                正在加载延迟数据...
-            </div>
-        `;
-    }
-
-    try {
-        const response = await fetch(`/api/servers/${serverId}/ping/history?period=24h`);
-        if (response.ok) {
-            const data = await response.json();
-            const history = (data.ping_history || []).map(item => ({
-                timestamp: item.timestamp,
-                latency: item.ping_time_ms
-            })).filter(item => typeof item.latency === 'number');
-
-            pingHistoryStore[serverId] = history;
-            renderPingChart(serverId);
-        } else {
-            resetPingChart(serverId);
-        }
-    } catch (error) {
-        resetPingChart(serverId);
-    }
-}
-
-
-
-async function runPingTest(serverId) {
-    if (!isSafeId(serverId)) return;
-    const latencyDisplay = document.getElementById(`ping-latency-${serverId}`);
-    const testButton = document.getElementById(`ping-test-btn-${serverId}`);
-
-    if (latencyDisplay) {
-        latencyDisplay.textContent = '正在测试...';
-    }
-    if (testButton) {
-        testButton.disabled = true;
-        testButton.textContent = '测试中...';
-    }
-
-    try {
-        const response = await fetch(`/api/servers/${serverId}/ping`, { method: 'POST' });
-        let data;
-        try {
-            data = await response.json();
-        } catch (parseError) {
-            data = { message: 'Ping接口返回格式异常' };
-        }
-
-        if (response.ok) {
-            const latency = data.ping_time_ms;
-            if (latencyDisplay) {
-                latencyDisplay.textContent = typeof latency === 'number'
-                    ? `当前延迟：${latency} ms`
-                    : '未获取到延迟数据';
-            }
-        } else if (latencyDisplay) {
-            latencyDisplay.textContent = data?.message || 'Ping失败';
-        }
-    } catch (error) {
-        if (latencyDisplay) {
-            latencyDisplay.textContent = 'Ping失败';
-        }
-    } finally {
-        if (testButton) {
-            testButton.disabled = false;
-            testButton.textContent = '测试Ping';
-        }
-    }
-
-    await loadPingHistory(serverId);
-}
-
-function getNetworkTestTarget(serverId) {
-    const input = document.getElementById(`network-target-${serverId}`);
-    if (input && input.value.trim()) {
-        return input.value.trim();
-    }
-    const cached = serverDataCache[serverId];
-    return cached?.server?.name || '';
-}
-
-function isValidLookingGlassTarget(target) {
-    if (!target) return false;
-    const trimmed = target.trim();
-    return /^[A-Za-z0-9][A-Za-z0-9-:.]{0,253}$/.test(trimmed);
-}
-
-function openLookingGlass(tool, serverId) {
-    const target = getNetworkTestTarget(serverId);
-    if (!isValidLookingGlassTarget(target)) return;
-    const baseUrl = resolveLookingGlassUrl();
-    const params = target ? `?host=${encodeURIComponent(target)}&tool=${encodeURIComponent(tool || 'ping')}` : '';
-    const hash = tool ? `#${tool}` : '';
-    try {
-        const url = new URL(`${baseUrl}${params}${hash}`);
-        if (isAllowedLookingGlassUrl(url)) {
-            window.open(url.href, '_blank', 'noopener,noreferrer');
-        }
-    } catch (err) {
-        // ignore invalid URL
-    }
-}
-
-async function initializePingSection(serverId) {
-    if (!isSafeId(serverId)) return;
-    resetPingChart(serverId);
-    await loadPingHistory(serverId);
-}
-
 // Populate the detailed row with data
-function populateDetailsRow(serverId, vpsRealtimeEndPoint,detailsRow) {
+function populateDetailsRow(serverId, detailsRow) {
     if (!isSafeId(serverId)) {
         const detailsContentDiv = detailsRow.querySelector('.server-details-content');
         if (detailsContentDiv) {
@@ -9723,8 +9045,6 @@ function populateDetailsRow(serverId, vpsRealtimeEndPoint,detailsRow) {
     }
 
     const metrics = serverData.metrics;
-    const defaultNetworkTarget = (serverData.server?.description || '').trim() || serverData.server?.name || '';
-
     let detailsHtml = '';
 
     // Memory and Disk Details with progress bars (combined)
@@ -9829,39 +9149,6 @@ function populateDetailsRow(serverId, vpsRealtimeEndPoint,detailsRow) {
                 </div>
             </div>
         </div>
-        <div class="detail-item">
-            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
-                <strong>网络连通性 (Ping / MTR / Trace)</strong>
-                <span class="badge bg-light text-dark border">HostHatch Looking Glass</span>
-            </div>
-            <div class="row g-2 align-items-center">
-                <div class="col-md-5 col-12">
-                    <input type="text" id="network-target-${serverId}" class="form-control form-control-sm" placeholder="目标主机或IP (默认为服务器名称)" value="${escapeHtml(defaultNetworkTarget)}">
-                </div>
-                <div class="col-md-7 col-12 d-flex flex-wrap gap-2 align-items-center">
-                    <button id="ping-test-btn-${serverId}" class="btn btn-outline-primary btn-sm" type="button" onclick="runPingTest('${serverId}')">
-                        <i class="bi bi-speedometer2 me-1"></i>测试Ping
-                    </button>
-                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openLookingGlass('ping','${serverId}')">
-                        <i class="bi bi-wifi me-1"></i>Ping
-                    </button>
-                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openLookingGlass('mtr','${serverId}')">
-                        <i class="bi bi-diagram-3 me-1"></i>MTR
-                    </button>
-                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openLookingGlass('trace','${serverId}')">
-                        <i class="bi bi-arrow-return-right me-1"></i>Trace
-                    </button>
-                    <span id="ping-latency-${serverId}" class="badge bg-secondary">尚未测试</span>
-                </div>
-            </div>
-            <div class="mt-3">
-                <div id="ping-chart-${serverId}" style="height: 120px; border: 1px solid #ddd; border-radius: 4px; position: relative; background-color: #f8f9fa; margin-top: 5px;">
-                    <div class="text-center p-3 text-muted" style="font-size: 0.875rem;">
-                        正在加载延迟数据...
-                    </div>
-                </div>
-            </div>
-        </div>
     `;
 
     detailsContentDiv.innerHTML = detailsHtml || '<p class="text-muted">无详细数据</p>';
@@ -9870,7 +9157,6 @@ function populateDetailsRow(serverId, vpsRealtimeEndPoint,detailsRow) {
     if (detailsHtml) {
         initializeCpuHistoryChart(serverId);
         initializeTrafficHistoryChart(serverId);
-        initializePingSection(serverId);
     }
 }
 
@@ -10818,7 +10104,7 @@ function renderServerTable(allStatuses) {
         // 2. If this server was previously expanded, re-expand it and populate its details
         if (expandedServerIds.has(serverId)) {
             detailsRowElement.classList.remove('d-none');
-            populateDetailsRow(serverId, realtime_endpoint, detailsRowElement); // Populate content
+            populateDetailsRow(serverId, detailsRowElement); // Populate content
         }
     });
 
