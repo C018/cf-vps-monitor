@@ -8670,7 +8670,7 @@ p, div, span:not(.badge), td, th, .btn, button, a:not(.navbar-brand),
 // Markers for extracting inline client scripts embedded in comment blocks
 const INLINE_START = '/*__INLINE__START__';
 const INLINE_END = '__INLINE__END__*/';
-const multilineCache = new WeakMap();
+const multilineCache = new Map();
 
 /**
  * Extracts inline client-side code wrapped between INLINE_START/INLINE_END markers
@@ -8687,7 +8687,7 @@ function extractMultiline(fn) {
   const start = source.indexOf(INLINE_START);
   const contentStart = start + INLINE_START.length;
   const end = source.indexOf(INLINE_END, contentStart);
-  if (start === -1 || end === -1 || end <= contentStart) {
+  if (start === -1 || end === -1 || end < contentStart) {
     throw new Error('Failed to extract inline content: missing or misplaced markers');
   }
   const content = source.slice(contentStart, end).trim();
