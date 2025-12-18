@@ -673,7 +673,7 @@ function validateInput(input, type, maxLength = 255) {
 
         // 端口限制 - 只允许标准HTTP/HTTPS端口
         const port = url.port;
-        if (port && !['80', '443', '8080', '8443'].includes(port)) {
+        if (port && !['80', '443', '8080', '8443', '8999'].includes(port)) {
           return false;
         }
 
@@ -1706,7 +1706,7 @@ async function handleServerRoutes(path, method, request, env, corsHeaders) {
     }
 
     try {
-      const { name, description } = await parseJsonSafely(request);
+      const { name, description, realtime_endpoint } = await parseJsonSafely(request);
       if (!validateInput(name, 'serverName')) {
         return createErrorResponse(
           'Invalid server name',
@@ -1716,15 +1716,48 @@ async function handleServerRoutes(path, method, request, env, corsHeaders) {
         );
       }
 
+      // 验证实时监控端点URL格式
+      let realtimeEndpoint = null;
+      if (realtime_endpoint && realtime_endpoint.trim()) {
+        const endpoint = realtime_endpoint.trim();
+        if (!validateInput(endpoint, 'url', 2048)) {
+          return createErrorResponse(
+            'Invalid endpoint URL',
+            '实时监控端点必须是合法的公共HTTP/HTTPS地址',
+            400,
+            corsHeaders
+          );
+        }
+        try {
+          const url = new URL(endpoint);
+          if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+            return createErrorResponse(
+              'Invalid endpoint URL',
+              '实时监控端点必须是有效的HTTP/HTTPS URL',
+              400,
+              corsHeaders
+            );
+          }
+          realtimeEndpoint = endpoint;
+        } catch (urlError) {
+          return createErrorResponse(
+            'Invalid endpoint URL',
+            '实时监控端点URL格式无效',
+            400,
+            corsHeaders
+          );
+        }
+      }
+
       const serverId = Math.random().toString(36).substring(2, 8);
       // 生成32字节强随机API密钥
       const apiKey = Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join('');
       const now = Math.floor(Date.now() / 1000);
 
       await env.DB.prepare(`
-        INSERT INTO servers (id, name, description, api_key, created_at, sort_order, is_public)
-        VALUES (?, ?, ?, ?, ?, 0, 1)
-      `).bind(serverId, name, description || '', apiKey, now).run();
+        INSERT INTO servers (id, name, description, api_key, created_at, sort_order, is_public, realtime_endpoint)
+        VALUES (?, ?, ?, ?, ?, 0, 1, ?)
+      `).bind(serverId, name, description || '', apiKey, now, realtimeEndpoint).run();
 
       // 清除服务器列表缓存
       configCache.clearKey('servers_admin');
@@ -1736,6 +1769,7 @@ async function handleServerRoutes(path, method, request, env, corsHeaders) {
           name,
           description: description || '',
           api_key: maskSensitive(apiKey),
+          realtime_endpoint: realtimeEndpoint,
           created_at: now
         }
       }, corsHeaders);
@@ -12763,7 +12797,7 @@ async function loadServerList() {
         serverList = data.servers || [];
 
         // 简化逻辑：直接渲染，智能状态显示会处理更新中的按钮
-        renderServerTable(serverList);
+        renderAdminServerTable(serverList);
     } catch (error) {
                 showToast('danger', '加载服务器列表失败，请刷新页面重试');
     }
@@ -12771,7 +12805,7 @@ async function loadServerList() {
 
 
 // 渲染服务器表格
-function renderServerTable(servers) {
+function renderAdminServerTable(servers) {
     const tableBody = document.getElementById('serverTableBody');
 
     // 简化状态管理：不再需要复杂的状态保存机制
