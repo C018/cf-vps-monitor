@@ -8667,8 +8667,13 @@ p, div, span:not(.badge), td, th, .btn, button, a:not(.navbar-brand),
 `;
 }
 
+function extractMultiline(fn) {
+  const match = fn.toString().match(/\/\*([\s\S]*?)\*\//);
+  return match ? match[1] : '';
+}
+
 function getMainJs() {
-  return `// main.js - 首页面的JavaScript逻辑
+  return extractMultiline(() => {/*// main.js - 首页面的JavaScript逻辑
 
 // Global variables
 let vpsUpdateInterval = null;
@@ -11903,10 +11908,10 @@ async function renderZoomedTrafficChart(serverId) {
         chartContainer.innerHTML = `<div class="text-center p-5 text-danger">加载图表失败: ${error.message}</div>`;
     }
 }
-`;
+*/});
 }
 function getLoginJs() {
-  return `// login.js - 登录页面的JavaScript逻辑
+  return extractMultiline(() => {/*// login.js - 登录页面的JavaScript逻辑
 
 // ==================== 统一API请求工具 ====================
 // 注意：此处的apiRequest函数已移至主要位置，避免重复定义
@@ -12245,13 +12250,13 @@ window.addEventListener('storage', function(e) {
                     }
     }
 });
-`;
+*/});
 }
 // Helper functions for updating server/site settings are no longer needed for frequent notifications
 // as that feature is removed.
 
 function getAdminJs() {
-  return `// admin.js - 管理后台的JavaScript逻辑
+  return extractMultiline(() => {/*// admin.js - 管理后台的JavaScript逻辑
 
 // ==================== 统一API请求工具 ====================
 
@@ -14728,5 +14733,5 @@ async function importSites(file) {
         if (fileInput) fileInput.value = '';
     }
 }
-`;
+*/});
 }
