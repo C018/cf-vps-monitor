@@ -5483,7 +5483,9 @@ function getIndexHtml() {
     <script>
         // 立即设置主题，避免闪烁
         (function() {
-            const theme = localStorage.getItem('vps-monitor-theme') || 'light';
+            const storedTheme = localStorage.getItem('vps-monitor-theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = storedTheme || (prefersDark ? 'dark' : 'light');
             document.documentElement.setAttribute('data-bs-theme', theme);
         })();
     </script>
@@ -6135,7 +6137,9 @@ function getLoginHtml() {
     <script>
         // 立即设置主题，避免闪烁
         (function() {
-            const theme = localStorage.getItem('vps-monitor-theme') || 'light';
+            const storedTheme = localStorage.getItem('vps-monitor-theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = storedTheme || (prefersDark ? 'dark' : 'light');
             document.documentElement.setAttribute('data-bs-theme', theme);
         })();
     </script>
@@ -6480,7 +6484,9 @@ function getAdminHtml() {
     <script>
         // 立即设置主题，避免闪烁
         (function() {
-            const theme = localStorage.getItem('vps-monitor-theme') || 'light';
+            const storedTheme = localStorage.getItem('vps-monitor-theme');
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const theme = storedTheme || (prefersDark ? 'dark' : 'light');
             document.documentElement.setAttribute('data-bs-theme', theme);
         })();
     </script>
@@ -8833,7 +8839,7 @@ function showError(message, containerId = null) {
     if (containerId) {
         const container = document.getElementById(containerId);
         if (container) {
-            container.innerHTML = \`<div class="alert alert-danger">\${message}</div>\`;
+            container.innerHTML = `<div class="alert alert-danger">${message}</div>`;
         }
     }
 }
@@ -8850,7 +8856,7 @@ function showSuccess(message, containerId = null) {
         if (containerId) {
         const container = document.getElementById(containerId);
         if (container) {
-            container.innerHTML = \`<div class="alert alert-success">\${message}</div>\`;
+            container.innerHTML = `<div class="alert alert-success">${message}</div>`;
         }
     }
 }
@@ -8930,13 +8936,62 @@ document.addEventListener('DOMContentLoaded', function() {
 const THEME_KEY = 'vps-monitor-theme';
 const LIGHT_THEME = 'light';
 const DARK_THEME = 'dark';
+const SYSTEM_THEME_QUERY = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+// Looking glass base URL (override via window.LOOKING_GLASS_URL if needed)
+const DEFAULT_LOOKING_GLASS_URL = 'https://lg.hosthatch.mock.moe/';
+const LOOKING_GLASS_URL = (typeof window !== 'undefined' && window.LOOKING_GLASS_URL) ? window.LOOKING_GLASS_URL : DEFAULT_LOOKING_GLASS_URL;
+const LOOKING_GLASS_ALLOWED_HOSTS = ['lg.hosthatch.mock.moe', 'lg.hosthatch.com'];
+function isAllowedLookingGlassUrl(url) {
+    return url.protocol === 'https:' && LOOKING_GLASS_ALLOWED_HOSTS.includes(url.hostname);
+}
+function resolveLookingGlassUrl() {
+    try {
+        const custom = LOOKING_GLASS_URL;
+        const parsed = new URL(custom);
+        return isAllowedLookingGlassUrl(parsed) ? parsed.origin + parsed.pathname : DEFAULT_LOOKING_GLASS_URL;
+    } catch {
+        return DEFAULT_LOOKING_GLASS_URL;
+    }
+}
+function isSafeId(id) {
+    return /^[\\w.-]+$/.test(String(id || ''));
+}
+function escapeHtml(text) {
+    if (text === undefined || text === null) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function getPreferredTheme() {
+    const storedTheme = localStorage.getItem(THEME_KEY);
+    if (storedTheme) return storedTheme;
+    return SYSTEM_THEME_QUERY?.matches ? DARK_THEME : LIGHT_THEME;
+}
 
 function initializeTheme() {
     const themeToggler = document.getElementById('themeToggler');
     if (!themeToggler) return;
 
-    const storedTheme = localStorage.getItem(THEME_KEY) || LIGHT_THEME;
-    applyTheme(storedTheme);
+    applyTheme(getPreferredTheme());
+
+    const syncWithSystem = (event) => {
+        if (!localStorage.getItem(THEME_KEY)) {
+            const prefersDark = event?.matches ?? (SYSTEM_THEME_QUERY?.matches ?? false);
+            applyTheme(prefersDark ? DARK_THEME : LIGHT_THEME);
+        }
+    };
+
+    if (SYSTEM_THEME_QUERY) {
+        if (SYSTEM_THEME_QUERY.addEventListener) {
+            SYSTEM_THEME_QUERY.addEventListener('change', syncWithSystem);
+        } else if (SYSTEM_THEME_QUERY.addListener) {
+            SYSTEM_THEME_QUERY.addListener(syncWithSystem);
+        }
+    }
 
     themeToggler.addEventListener('click', () => {
         const currentTheme = document.documentElement.getAttribute('data-bs-theme');
@@ -9023,7 +9078,7 @@ async function initializeCpuHistoryChart(serverId) {
     
     try {
         // 获取24小时内的CPU历史数据
-        const response = await fetch(\`/api/servers/\${serverId}/cpu/history\`);
+        const response = await fetch(`/api/servers/${serverId}/cpu/history`);
         if (response.ok) {
             const data = await response.json();
             cpuUsageHistory = data.history || [];
@@ -9046,7 +9101,7 @@ async function initializeTrafficHistoryChart(serverId) {
     
     try {
         // 获取24小时内的流量历史数据
-        const response = await fetch(\`/api/servers/\${serverId}/traffic/history\`);
+        const response = await fetch(`/api/servers/${serverId}/traffic/history`);
         if (response.ok) {
             const data = await response.json();
             trafficUsageHistory = data.history || [];
@@ -9062,19 +9117,19 @@ async function initializeTrafficHistoryChart(serverId) {
 
 // 重置流量曲线图
 function resetTrafficChart(serverId) {
-    const chartContainer = document.getElementById(\`traffic-chart-\${serverId}\`);
+    const chartContainer = document.getElementById(`traffic-chart-${serverId}`);
     if (chartContainer) {
-        chartContainer.innerHTML = \`
+        chartContainer.innerHTML = `
             <div class="text-center p-3 text-muted" style="font-size: 0.875rem;">
                 暂无流量历史数据
             </div>
-        \`;
+        `;
     }
 }
 
 // 绘制流量使用率曲线图（显示24小时上传下载数据）
 function renderTrafficChart(serverId) {
-    const chartContainer = document.getElementById(\`traffic-chart-\${serverId}\`);
+    const chartContainer = document.getElementById(`traffic-chart-${serverId}`);
     if (!chartContainer || !trafficUsageHistory || trafficUsageHistory.length === 0) {
         resetTrafficChart(serverId);
         return;
@@ -9157,11 +9212,11 @@ function renderTrafficChart(serverId) {
         const downloadY = padding.top + chartHeight - (item.download / maxTraffic) * chartHeight;
         
         if (index === 0) {
-            uploadPath += \`M \${x} \${uploadY}\`;
-            downloadPath += \`M \${x} \${downloadY}\`;
+            uploadPath += `M ${x} ${uploadY}`;
+            downloadPath += `M ${x} ${downloadY}`;
         } else {
-            uploadPath += \` L \${x} \${uploadY}\`;
-            downloadPath += \` L \${x} \${downloadY}\`;
+            uploadPath += ` L ${x} ${uploadY}`;
+            downloadPath += ` L ${x} ${downloadY}`;
         }
     });
     
@@ -9198,19 +9253,19 @@ function renderTrafficChart(serverId) {
 // 格式化流量值显示
 function formatTrafficValue(value) {
     if (value >= 1024 * 1024 * 1024) {
-        return \`\${(value / (1024 * 1024 * 1024)).toFixed(1)}GB/s\`;
+        return `${(value / (1024 * 1024 * 1024)).toFixed(1)}GB/s`;
     } else if (value >= 1024 * 1024) {
-        return \`\${(value / (1024 * 1024)).toFixed(1)}MB/s\`;
+        return `${(value / (1024 * 1024)).toFixed(1)}MB/s`;
     } else if (value >= 1024) {
-        return \`\${(value / 1024).toFixed(1)}KB/s\`;
+        return `${(value / 1024).toFixed(1)}KB/s`;
     } else {
-        return \`\${Math.round(value)}B/s\`;
+        return `${Math.round(value)}B/s`;
     }
 }
 
 // 绘制设备CPU使用率对比图（显示24小时历史数据）
 function renderCpuUsageChart(serverId) {
-    const chartContainer = document.getElementById(\`cpu-usage-chart-\${serverId}\`);
+    const chartContainer = document.getElementById(`cpu-usage-chart-${serverId}`);
     if (!chartContainer || !cpuUsageHistory || cpuUsageHistory.length === 0) {
         if (chartContainer) {
             chartContainer.innerHTML = '<div class="text-center p-3 text-muted" style="font-size: 0.875rem;">暂无CPU历史数据</div>';
@@ -9315,9 +9370,9 @@ function renderCpuUsageChart(serverId) {
             const y = chartBottom - ((point.usage / maxUsage) * chartHeight);
             
             if (index === 0) {
-                pathData += \`M \${x} \${y}\`;
+                pathData += `M ${x} ${y}`;
             } else {
-                pathData += \` L \${x} \${y}\`;
+                pathData += ` L ${x} ${y}`;
             }
         });
         
@@ -9346,7 +9401,7 @@ function renderCpuUsageChart(serverId) {
             // 添加hover效果
             const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
             const time = new Date(point.timestamp).toLocaleString('zh-CN');
-            title.textContent = \`\${time}: \${point.usage.toFixed(1)}%\`;
+            title.textContent = `${time}: ${point.usage.toFixed(1)}%`;
             circle.appendChild(title);
             
             svg.appendChild(circle);
@@ -9384,7 +9439,7 @@ function renderCpuUsageChart(serverId) {
     if (cpuUsageHistory.length > 0) {
         const latestValue = cpuUsageHistory[cpuUsageHistory.length - 1].usage;
         const currentLabel = document.createElement('div');
-        currentLabel.style.cssText = \`
+        currentLabel.style.cssText = `
             position: absolute;
             top: 5px;
             right: 10px;
@@ -9394,21 +9449,21 @@ function renderCpuUsageChart(serverId) {
             border-radius: 4px;
             font-size: 11px;
             font-weight: 600;
-        \`;
-        currentLabel.textContent = \`当前: \${latestValue.toFixed(1)}%\`;
+        `;
+        currentLabel.textContent = `当前: ${latestValue.toFixed(1)}%`;
         chartContainer.appendChild(currentLabel);
     }
 }
 
 // 重置CPU曲线图
 function resetCpuChart(serverId) {
-    const chartContainer = document.getElementById(\`cpu-usage-chart-\${serverId}\`);
+    const chartContainer = document.getElementById(`cpu-usage-chart-${serverId}`);
     if (chartContainer) {
-        chartContainer.innerHTML = \`
+        chartContainer.innerHTML = `
             <div class="text-center p-3 text-muted" style="font-size: 0.875rem;">
                 正在加载CPU使用率历史数据...
             </div>
-        \`;
+        `;
     }
 }
 
@@ -9418,14 +9473,14 @@ const pingHistoryStore = {};
 function renderLatencyChart(history, container, emptyText = '暂无延迟数据') {
     if (!container) return;
     if (!history || !history.length) {
-        container.innerHTML = \`<div class="text-center p-3 text-muted" style="font-size: 0.875rem;">\${emptyText}</div>\`;
+        container.innerHTML = `<div class="text-center p-3 text-muted" style="font-size: 0.875rem;">${emptyText}</div>`;
         return;
     }
 
     const data = history.slice().sort((a, b) => a.timestamp - b.timestamp);
     const maxLatency = data.reduce((max, item) => Math.max(max, item.latency || 0), 0);
     if (maxLatency <= 0) {
-        container.innerHTML = \`<div class="text-center p-3 text-muted" style="font-size: 0.875rem;">\${emptyText}</div>\`;
+        container.innerHTML = `<div class="text-center p-3 text-muted" style="font-size: 0.875rem;">${emptyText}</div>`;
         return;
     }
 
@@ -9465,7 +9520,7 @@ function renderLatencyChart(history, container, emptyText = '暂无延迟数据'
         label.setAttribute('text-anchor', 'end');
         label.setAttribute('font-size', '8');
         label.setAttribute('fill', '#666');
-        label.textContent = \`\${Math.round(maxLatency * (1 - i / 4))} ms\`;
+        label.textContent = `${Math.round(maxLatency * (1 - i / 4))} ms`;
         svg.appendChild(label);
     }
 
@@ -9478,7 +9533,7 @@ function renderLatencyChart(history, container, emptyText = '暂无延迟数据'
             : padding.left + (index / lastIndex) * chartWidth;
         const latency = Math.max(0, item.latency || 0);
         const y = padding.top + chartHeight - (latency / maxLatency) * chartHeight;
-        path += index === 0 ? \`M \${x} \${y}\` : \` L \${x} \${y}\`;
+        path += index === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
     });
 
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -9503,33 +9558,37 @@ function renderLatencyChart(history, container, emptyText = '暂无延迟数据'
     if (typeof latestLatency === 'number') {
         const badge = document.createElement('div');
         badge.style.cssText = 'position:absolute; top:6px; right:8px; background:rgba(13,110,253,0.1); color:#0d6efd; padding:2px 8px; border-radius:4px; font-size:11px;';
-        badge.textContent = \`当前：\${latestLatency.toFixed(2)} ms\`;
+        badge.textContent = `当前：${latestLatency.toFixed(2)} ms`;
         container.appendChild(badge);
     }
 }
 
 function resetPingChart(serverId) {
-    const chartContainer = document.getElementById(\`ping-chart-\${serverId}\`);
+    if (!isSafeId(serverId)) return;
+    const chartContainer = document.getElementById(`ping-chart-${serverId}`);
     renderLatencyChart([], chartContainer, '暂无延迟数据');
 }
 
 function renderPingChart(serverId) {
-    const chartContainer = document.getElementById(\`ping-chart-\${serverId}\`);
+    if (!isSafeId(serverId)) return;
+    const chartContainer = document.getElementById(`ping-chart-${serverId}`);
     renderLatencyChart(pingHistoryStore[serverId] || [], chartContainer, '暂无延迟数据');
 }
 
 async function loadPingHistory(serverId) {
-    const chartContainer = document.getElementById(\`ping-chart-\${serverId}\`);
+    if (!isSafeId(serverId)) return;
+
+    const chartContainer = document.getElementById(`ping-chart-${serverId}`);
     if (chartContainer) {
-        chartContainer.innerHTML = \`
+        chartContainer.innerHTML = `
             <div class="text-center p-3 text-muted" style="font-size: 0.875rem;">
                 正在加载延迟数据...
             </div>
-        \`;
+        `;
     }
 
     try {
-        const response = await fetch(\`/api/servers/\${serverId}/ping/history?period=24h\`);
+        const response = await fetch(`/api/servers/${serverId}/ping/history?period=24h`);
         if (response.ok) {
             const data = await response.json();
             const history = (data.ping_history || []).map(item => ({
@@ -9550,8 +9609,9 @@ async function loadPingHistory(serverId) {
 
 
 async function runPingTest(serverId) {
-    const latencyDisplay = document.getElementById(\`ping-latency-\${serverId}\`);
-    const testButton = document.getElementById(\`ping-test-btn-\${serverId}\`);
+    if (!isSafeId(serverId)) return;
+    const latencyDisplay = document.getElementById(`ping-latency-${serverId}`);
+    const testButton = document.getElementById(`ping-test-btn-${serverId}`);
 
     if (latencyDisplay) {
         latencyDisplay.textContent = '正在测试...';
@@ -9562,7 +9622,7 @@ async function runPingTest(serverId) {
     }
 
     try {
-        const response = await fetch(\`/api/servers/\${serverId}/ping\`, { method: 'POST' });
+        const response = await fetch(`/api/servers/${serverId}/ping`, { method: 'POST' });
         let data;
         try {
             data = await response.json();
@@ -9574,7 +9634,7 @@ async function runPingTest(serverId) {
             const latency = data.ping_time_ms;
             if (latencyDisplay) {
                 latencyDisplay.textContent = typeof latency === 'number'
-                    ? \`当前延迟：\${latency} ms\`
+                    ? `当前延迟：${latency} ms`
                     : '未获取到延迟数据';
             }
         } else if (latencyDisplay) {
@@ -9594,13 +9654,52 @@ async function runPingTest(serverId) {
     await loadPingHistory(serverId);
 }
 
+function getNetworkTestTarget(serverId) {
+    const input = document.getElementById(`network-target-${serverId}`);
+    if (input && input.value.trim()) {
+        return input.value.trim();
+    }
+    const cached = serverDataCache[serverId];
+    return cached?.server?.name || '';
+}
+
+function isValidLookingGlassTarget(target) {
+    if (!target) return false;
+    const trimmed = target.trim();
+    return /^[A-Za-z0-9][A-Za-z0-9-:.]{0,253}$/.test(trimmed);
+}
+
+function openLookingGlass(tool, serverId) {
+    const target = getNetworkTestTarget(serverId);
+    if (!isValidLookingGlassTarget(target)) return;
+    const baseUrl = resolveLookingGlassUrl();
+    const params = target ? `?host=${encodeURIComponent(target)}&tool=${encodeURIComponent(tool || 'ping')}` : '';
+    const hash = tool ? `#${tool}` : '';
+    try {
+        const url = new URL(`${baseUrl}${params}${hash}`);
+        if (isAllowedLookingGlassUrl(url)) {
+            window.open(url.href, '_blank', 'noopener,noreferrer');
+        }
+    } catch (err) {
+        // ignore invalid URL
+    }
+}
+
 async function initializePingSection(serverId) {
+    if (!isSafeId(serverId)) return;
     resetPingChart(serverId);
     await loadPingHistory(serverId);
 }
 
 // Populate the detailed row with data
 function populateDetailsRow(serverId, vpsRealtimeEndPoint,detailsRow) {
+    if (!isSafeId(serverId)) {
+        const detailsContentDiv = detailsRow.querySelector('.server-details-content');
+        if (detailsContentDiv) {
+            detailsContentDiv.innerHTML = '<p class="text-danger">无效的服务器ID</p>';
+        }
+        return;
+    }
     // 初始化CPU历史数据图表
     initializeCpuHistoryChart(serverId);
     const serverData = serverDataCache[serverId];
@@ -9612,12 +9711,13 @@ function populateDetailsRow(serverId, vpsRealtimeEndPoint,detailsRow) {
     }
 
     const metrics = serverData.metrics;
+    const defaultNetworkTarget = (serverData.server?.description || '').trim() || serverData.server?.name || '';
 
     let detailsHtml = '';
 
     // Memory and Disk Details with progress bars (combined)
     if (metrics.memory || metrics.disk) {
-        detailsHtml += \`<div class="detail-item"><strong>内存 & 硬盘:</strong>\`;
+        detailsHtml += `<div class="detail-item"><strong>内存 & 硬盘:</strong>`;
         
         // Memory bar
         if (metrics.memory) {
@@ -9628,18 +9728,18 @@ function populateDetailsRow(serverId, vpsRealtimeEndPoint,detailsRow) {
             if (memoryPercent > 80) memoryColor = 'bg-danger';
             else if (memoryPercent > 60) memoryColor = 'bg-warning';
             
-            detailsHtml += \`
+            detailsHtml += `
                 <div class="mt-2">
-                    <small class="text-muted">内存 (\${memoryTotal}) </small>
+                    <small class="text-muted">内存 (${memoryTotal}) </small>
                     <div class="progress" style="height: 25px; background-color: #b0c8e0;">
-                        <div class="progress-bar \${memoryColor}" role="progressbar" 
-                             style="width: \${memoryPercent}%; display: flex; align-items: center; justify-content: center; font-weight: 600; color: white;" 
+                        <div class="progress-bar ${memoryColor}" role="progressbar" 
+                             style="width: ${memoryPercent}%; display: flex; align-items: center; justify-content: center; font-weight: 600; color: white;" 
                              id="memory-progress-bar">
-                            \${memoryUsed}(\${memoryPercent.toFixed(1)}%)
+                            ${memoryUsed}(${memoryPercent.toFixed(1)}%)
                         </div>
                     </div>
                 </div>
-            \`;
+            `;
         }
         
         // Disk bar
@@ -9651,37 +9751,37 @@ function populateDetailsRow(serverId, vpsRealtimeEndPoint,detailsRow) {
             if (diskPercent > 90) diskColor = 'bg-danger';
             else if (diskPercent > 75) diskColor = 'bg-warning';
             
-            detailsHtml += \`
+            detailsHtml += `
                 <div class="mt-2">
-                    <small class="text-muted">硬盘 (\${diskTotal}G)</small>
+                    <small class="text-muted">硬盘 (${diskTotal}G)</small>
                     <div class="progress" style="height: 25px; background-color: #b0c8e0;">
-                        <div class="progress-bar \${diskColor}" role="progressbar" 
-                             style="width: \${diskPercent+2}%; display: flex; align-items: center; justify-content: center;padding-left: 10px; font-weight: 600; color: white;" 
+                        <div class="progress-bar ${diskColor}" role="progressbar" 
+                             style="width: ${diskPercent+2}%; display: flex; align-items: center; justify-content: center;padding-left: 10px; font-weight: 600; color: white;" 
                              id="disk-progress-bar">
-                            \${diskUsed}G (\${diskPercent.toFixed(1)}%)
+                            ${diskUsed}G (${diskPercent.toFixed(1)}%)
                         </div>
                     </div>
                 </div>
-            \`;
+            `;
         }
         // 添加CPU负载信息到内存硬盘框
         if (metrics.cpu && metrics.cpu.load_avg) {
-            detailsHtml += \`
+            detailsHtml += `
                 <div class="mt-2">
                     <small class="text-muted">CPU负载 (1m, 5m, 15m)</small>
-                    <div class="fw-bold text-info" id="cpu-load-display-\${serverId}">
+                    <div class="fw-bold text-info" id="cpu-load-display-${serverId}">
                         <i class="bi bi-cpu me-1"></i>
-                        \${metrics.cpu.load_avg.join(', ')}
+                        ${metrics.cpu.load_avg.join(', ')}
                     </div>
                 </div>
-            \`;
+            `;
         }
         
-        detailsHtml += \`</div>\`;
+        detailsHtml += `</div>`;
     }
 
     // 24小时上传下载流量曲线图
-    detailsHtml += \`
+    detailsHtml += `
         <div class="detail-item">
             <div class="d-flex justify-content-between align-items-center">
                 <strong>24小时流量走势图:</strong>
@@ -9689,7 +9789,7 @@ function populateDetailsRow(serverId, vpsRealtimeEndPoint,detailsRow) {
             
             <!-- Traffic Chart -->
             <div class="mt-3"> 
-                <div id="traffic-chart-\${serverId}" style="height: 120px; border: 1px solid #ddd; border-radius: 4px; position: relative; background-color: #f8f9fa; margin-top: 5px;">
+                <div id="traffic-chart-${serverId}" style="height: 120px; border: 1px solid #ddd; border-radius: 4px; position: relative; background-color: #f8f9fa; margin-top: 5px;">
                     <div class="text-center p-3 text-muted" style="font-size: 0.875rem;">
                         正在加载流量历史数据...
                     </div>
@@ -9707,7 +9807,7 @@ function populateDetailsRow(serverId, vpsRealtimeEndPoint,detailsRow) {
             <!-- CPU Usage Chart -->
             <div class="mt-3">
                 <small class="text-muted">设备CPU使用率历史图 (24小时)</small>
-                <div id="cpu-usage-chart-\${serverId}" style="height: 120px; border: 1px solid #ddd; border-radius: 4px; position: relative; background-color: #f8f9fa; margin-top: 5px;">
+                <div id="cpu-usage-chart-${serverId}" style="height: 120px; border: 1px solid #ddd; border-radius: 4px; position: relative; background-color: #f8f9fa; margin-top: 5px;">
                     <div class="text-center p-3 text-muted" style="font-size: 0.875rem;">
                         正在加载CPU使用率历史数据...
                     </div>
@@ -9717,7 +9817,40 @@ function populateDetailsRow(serverId, vpsRealtimeEndPoint,detailsRow) {
                 </div>
             </div>
         </div>
-    \`;
+        <div class="detail-item">
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                <strong>网络连通性 (Ping / MTR / Trace)</strong>
+                <span class="badge bg-light text-dark border">HostHatch Looking Glass</span>
+            </div>
+            <div class="row g-2 align-items-center">
+                <div class="col-md-5 col-12">
+                    <input type="text" id="network-target-${serverId}" class="form-control form-control-sm" placeholder="目标主机或IP (默认为服务器名称)" value="${escapeHtml(defaultNetworkTarget)}">
+                </div>
+                <div class="col-md-7 col-12 d-flex flex-wrap gap-2 align-items-center">
+                    <button id="ping-test-btn-${serverId}" class="btn btn-outline-primary btn-sm" type="button" onclick="runPingTest('${serverId}')">
+                        <i class="bi bi-speedometer2 me-1"></i>测试Ping
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openLookingGlass('ping','${serverId}')">
+                        <i class="bi bi-wifi me-1"></i>Ping
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openLookingGlass('mtr','${serverId}')">
+                        <i class="bi bi-diagram-3 me-1"></i>MTR
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" type="button" onclick="openLookingGlass('trace','${serverId}')">
+                        <i class="bi bi-arrow-return-right me-1"></i>Trace
+                    </button>
+                    <span id="ping-latency-${serverId}" class="badge bg-secondary">尚未测试</span>
+                </div>
+            </div>
+            <div class="mt-3">
+                <div id="ping-chart-${serverId}" style="height: 120px; border: 1px solid #ddd; border-radius: 4px; position: relative; background-color: #f8f9fa; margin-top: 5px;">
+                    <div class="text-center p-3 text-muted" style="font-size: 0.875rem;">
+                        正在加载延迟数据...
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
 
     detailsContentDiv.innerHTML = detailsHtml || '<p class="text-muted">无详细数据</p>';
     
@@ -9725,6 +9858,7 @@ function populateDetailsRow(serverId, vpsRealtimeEndPoint,detailsRow) {
     if (detailsHtml) {
         initializeCpuHistoryChart(serverId);
         initializeTrafficHistoryChart(serverId);
+        initializePingSection(serverId);
     }
 }
 
@@ -9801,14 +9935,14 @@ function getProgressBarHtml(percentage) {
     }
 
     // Use relative positioning on the container and absolute for the text, centered over the whole bar
-    return \`
+    return `
         <div class="progress" style="height: 25px; font-size: 0.8em; position: relative; background-color: #b0c8e0;">
-            <div class="progress-bar \${bgColorClass}" role="progressbar" style="width: \${percent}%;" aria-valuenow="\${percent}" aria-valuemin="0" aria-valuemax="100"></div>
+            <div class="progress-bar ${bgColorClass}" role="progressbar" style="width: ${percent}%;" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"></div>
             <span style="position: absolute; width: 100%; text-align: center; line-height: 25px; font-weight: bold;">
-                \${percent.toFixed(1)}%
+                ${percent.toFixed(1)}%
             </span>
         </div>
-    \`;
+    `;
 }
 
 
@@ -9834,7 +9968,7 @@ function renderMobileServerCards(allStatuses) {
     mobileContainer.innerHTML = '';
 
     if (!allStatuses || allStatuses.length === 0) {
-        mobileContainer.innerHTML = \`
+        mobileContainer.innerHTML = `
             <div class="text-center p-4">
                 <i class="bi bi-server text-muted" style="font-size: 3rem;"></i>
                 <div class="mt-3 text-muted">
@@ -9842,7 +9976,7 @@ function renderMobileServerCards(allStatuses) {
                     <small>请登录管理后台添加服务器</small>
                 </div>
             </div>
-        \`;
+        `;
         return;
     }
 
@@ -9882,22 +10016,22 @@ function renderMobileServerCards(allStatuses) {
         // 卡片头部
         const cardHeader = document.createElement('div');
         cardHeader.className = 'mobile-card-header';
-        cardHeader.innerHTML = \`
+        cardHeader.innerHTML = `
             <div style="flex: 1;"></div>
-            <h6 class="mobile-card-title text-center" style="flex: 1;">\${serverName || '未命名服务器'}</h6>
+            <h6 class="mobile-card-title text-center" style="flex: 1;">${serverName || '未命名服务器'}</h6>
             <div style="flex: 1; display: flex; justify-content: flex-end;">
-                <span class="badge \${statusInfo.class}">\${statusInfo.text}</span>
+                <span class="badge ${statusInfo.class}">${statusInfo.text}</span>
             </div>
-        \`;
+        `;
 
         // 卡片主体 - 显示所有信息
         const cardBody = document.createElement('div');
         cardBody.className = 'mobile-card-body';
 
         // 获取所有数据
-        const cpuValue = metrics && metrics.cpu && typeof metrics.cpu.usage_percent === 'number' ? \`\${metrics.cpu.usage_percent.toFixed(1)}%\` : '-';
-        const memoryValue = metrics && metrics.memory && typeof metrics.memory.usage_percent === 'number' ? \`\${metrics.memory.usage_percent.toFixed(1)}%\` : '-';
-        const diskValue = metrics && metrics.disk && typeof metrics.disk.usage_percent === 'number' ? \`\${metrics.disk.usage_percent.toFixed(1)}%\` : '-';
+        const cpuValue = metrics && metrics.cpu && typeof metrics.cpu.usage_percent === 'number' ? `${metrics.cpu.usage_percent.toFixed(1)}%` : '-';
+        const memoryValue = metrics && metrics.memory && typeof metrics.memory.usage_percent === 'number' ? `${metrics.memory.usage_percent.toFixed(1)}%` : '-';
+        const diskValue = metrics && metrics.disk && typeof metrics.disk.usage_percent === 'number' ? `${metrics.disk.usage_percent.toFixed(1)}%` : '-';
         const uptimeValue = metrics && metrics.uptime ? formatUptime(metrics.uptime) : '-';
         const uploadSpeed = metrics && metrics.network ? formatNetworkSpeed(metrics.network.upload_speed) : '-';
         const downloadSpeed = metrics && metrics.network ? formatNetworkSpeed(metrics.network.download_speed) : '-';
@@ -9907,57 +10041,57 @@ function renderMobileServerCards(allStatuses) {
         // 上传速度 | 下载速度
         const speedRow = document.createElement('div');
         speedRow.className = 'mobile-card-two-columns';
-        speedRow.innerHTML = \`
+        speedRow.innerHTML = `
             <div class="mobile-card-column-item">
                 <span class="mobile-card-label">上传速度</span>
-                <span class="mobile-card-value">\${uploadSpeed}</span>
+                <span class="mobile-card-value">${uploadSpeed}</span>
             </div>
             <div class="mobile-card-column-item">
                 <span class="mobile-card-label">下载速度</span>
-                <span class="mobile-card-value">\${downloadSpeed}</span>
+                <span class="mobile-card-value">${downloadSpeed}</span>
             </div>
-        \`;
+        `;
         cardBody.appendChild(speedRow);
 
         // CPU | 内存
         const cpuMemoryRow = document.createElement('div');
         cpuMemoryRow.className = 'mobile-card-two-columns';
-        cpuMemoryRow.innerHTML = \`
+        cpuMemoryRow.innerHTML = `
             <div class="mobile-card-column-item">
                 <span class="mobile-card-label">CPU</span>
-                <span class="mobile-card-value">\${cpuValue}</span>
+                <span class="mobile-card-value">${cpuValue}</span>
             </div>
             <div class="mobile-card-column-item">
                 <span class="mobile-card-label">内存</span>
-                <span class="mobile-card-value">\${memoryValue}</span>
+                <span class="mobile-card-value">${memoryValue}</span>
             </div>
-        \`;
+        `;
         cardBody.appendChild(cpuMemoryRow);
 
         // 硬盘 | 运行时长
         const diskUptimeRow = document.createElement('div');
         diskUptimeRow.className = 'mobile-card-two-columns';
-        diskUptimeRow.innerHTML = \`
+        diskUptimeRow.innerHTML = `
             <div class="mobile-card-column-item">
                 <span class="mobile-card-label">硬盘</span>
-                <span class="mobile-card-value">\${diskValue}</span>
+                <span class="mobile-card-value">${diskValue}</span>
             </div>
             <div class="mobile-card-column-item">
                 <span class="mobile-card-label">运行时长</span>
-                <span class="mobile-card-value">\${uptimeValue}</span>
+                <span class="mobile-card-value">${uptimeValue}</span>
             </div>
-        \`;
+        `;
         cardBody.appendChild(diskUptimeRow);
 
         // 在线率 - 单行（可点击查看历史，支持时间段切换）
         const uptimeRateRow = document.createElement('div');
         uptimeRateRow.className = 'mobile-card-row';
-        uptimeRateRow.innerHTML = \`
+        uptimeRateRow.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <span class="mobile-card-label">在线率</span>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <span class="mobile-card-value" id="mobile-uptime-\${serverId}" style="color: #007bff; cursor: pointer; text-decoration: underline;">加载中...</span>
-                    <select class="form-select form-select-sm" id="mobile-period-\${serverId}" style="width: 70px; font-size: 0.75rem;" onchange="updateMobileUptimeDisplay('\${serverId}', this.value)">
+                    <span class="mobile-card-value" id="mobile-uptime-${serverId}" style="color: #007bff; cursor: pointer; text-decoration: underline;">加载中...</span>
+                    <select class="form-select form-select-sm" id="mobile-period-${serverId}" style="width: 70px; font-size: 0.75rem;" onchange="updateMobileUptimeDisplay('${serverId}', this.value)">
                         <option value="24h">24小时</option>
                         <option value="3d">3天</option>
                         <option value="30d">30天</option>
@@ -9965,10 +10099,10 @@ function renderMobileServerCards(allStatuses) {
                     </select>
                 </div>
             </div>
-        \`;
+        `;
         uptimeRateRow.onclick = (e) => {
             // 只有在点击在线率数值时才显示详情
-            if (e.target.id === \`mobile-uptime-\${serverId}\` && typeof showUptimeHistory === 'function') {
+            if (e.target.id === `mobile-uptime-${serverId}` && typeof showUptimeHistory === 'function') {
                 showUptimeHistory(serverId);
             }
         };
@@ -9977,24 +10111,24 @@ function renderMobileServerCards(allStatuses) {
         // 总上传 | 总下载
         const totalRow = document.createElement('div');
         totalRow.className = 'mobile-card-two-columns';
-        totalRow.innerHTML = \`
+        totalRow.innerHTML = `
             <div class="mobile-card-column-item">
                 <span class="mobile-card-label">总上传</span>
-                <span class="mobile-card-value">\${totalUpload}</span>
+                <span class="mobile-card-value">${totalUpload}</span>
             </div>
             <div class="mobile-card-column-item">
                 <span class="mobile-card-label">总下载</span>
-                <span class="mobile-card-value">\${totalDownload}</span>
+                <span class="mobile-card-value">${totalDownload}</span>
             </div>
-        \`;
+        `;
         cardBody.appendChild(totalRow);
 
         // 最后更新 - 单行
         const lastUpdateRow = document.createElement('div');
         lastUpdateRow.className = 'mobile-card-row';
-        lastUpdateRow.innerHTML = \`
-            <span class="mobile-card-label">最后更新: \${lastUpdate}</span>
-        \`;
+        lastUpdateRow.innerHTML = `
+            <span class="mobile-card-label">最后更新: ${lastUpdate}</span>
+        `;
         cardBody.appendChild(lastUpdateRow);
 
 
@@ -10017,12 +10151,12 @@ function renderMobileServerCards(allStatuses) {
 
 // 更新手机端在线率显示
 async function updateMobileUptimeDisplay(serverId, period) {
-    const uptimeElement = document.getElementById(\`mobile-uptime-\${serverId}\`);
+    const uptimeElement = document.getElementById(`mobile-uptime-${serverId}`);
     if (!uptimeElement) return;
     
     try {
         uptimeElement.textContent = '加载中...';
-        const response = await publicApiRequest(\`/api/servers/\${serverId}/uptime?period=\${period}\`);
+        const response = await publicApiRequest(`/api/servers/${serverId}/uptime?period=${period}`);
         
         if (response && response.uptime !== undefined) {
             const percentage = response.uptime;
@@ -10030,15 +10164,15 @@ async function updateMobileUptimeDisplay(serverId, period) {
             if (percentage < 95) colorClass = 'text-warning';
             if (percentage < 90) colorClass = 'text-danger';
             
-            uptimeElement.textContent = \`\${percentage.toFixed(2)}%\`;
-            uptimeElement.className = \`mobile-card-value \${colorClass}\`;
+            uptimeElement.textContent = `${percentage.toFixed(2)}%`;
+            uptimeElement.className = `mobile-card-value ${colorClass}`;
             uptimeElement.style.cursor = 'pointer';
             uptimeElement.style.textDecoration = 'underline';
         } else {
             uptimeElement.textContent = '无数据';
         }
     } catch (error) {
-        console.error(\`加载服务器 \${serverId} 在线率数据失败:\`, error);
+        console.error(`加载服务器 ${serverId} 在线率数据失败:`, error);
         uptimeElement.textContent = '加载失败';
         uptimeElement.className = 'mobile-card-value text-muted';
     }
@@ -10052,7 +10186,7 @@ function renderMobileSiteCards(sites) {
     mobileContainer.innerHTML = '';
 
     if (!sites || sites.length === 0) {
-        mobileContainer.innerHTML = \`
+        mobileContainer.innerHTML = `
             <div class="text-center p-4">
                 <i class="bi bi-globe text-muted" style="font-size: 3rem;"></i>
                 <div class="mt-3 text-muted">
@@ -10060,7 +10194,7 @@ function renderMobileSiteCards(sites) {
                     <small>请登录管理后台添加监控网站</small>
                 </div>
             </div>
-        \`;
+        `;
         return;
     }
 
@@ -10070,18 +10204,18 @@ function renderMobileSiteCards(sites) {
 
         const statusInfo = getSiteStatusBadge(site.last_status);
         const lastCheckTime = site.last_checked ? new Date(site.last_checked * 1000).toLocaleString() : '从未';
-        const responseTime = site.last_response_time_ms !== null ? \`\${site.last_response_time_ms} ms\` : '-';
+        const responseTime = site.last_response_time_ms !== null ? `${site.last_response_time_ms} ms` : '-';
 
         // 卡片头部
         const cardHeader = document.createElement('div');
         cardHeader.className = 'mobile-card-header';
-        cardHeader.innerHTML = \`
+        cardHeader.innerHTML = `
             <div style="flex: 1;"></div>
-            <h6 class="mobile-card-title text-center" style="flex: 1;">\${site.name || '未命名网站'}</h6>
+            <h6 class="mobile-card-title text-center" style="flex: 1;">${site.name || '未命名网站'}</h6>
             <div style="flex: 1; display: flex; justify-content: flex-end;">
-                <span class="badge \${statusInfo.class}">\${statusInfo.text}</span>
+                <span class="badge ${statusInfo.class}">${statusInfo.text}</span>
             </div>
-        \`;
+        `;
 
         // 卡片主体
         const cardBody = document.createElement('div');
@@ -10093,33 +10227,33 @@ function renderMobileSiteCards(sites) {
         // 状态码 | 响应时间
         const statusResponseRow = document.createElement('div');
         statusResponseRow.className = 'mobile-card-two-columns';
-        statusResponseRow.innerHTML = \`
+        statusResponseRow.innerHTML = `
             <div class="mobile-card-column-item">
                 <span class="mobile-card-label">状态码</span>
-                <span class="mobile-card-value">\${statusCode}</span>
+                <span class="mobile-card-value">${statusCode}</span>
             </div>
             <div class="mobile-card-column-item">
                 <span class="mobile-card-label">响应时间</span>
-                <span class="mobile-card-value">\${responseTime}</span>
+                <span class="mobile-card-value">${responseTime}</span>
             </div>
-        \`;
+        `;
         cardBody.appendChild(statusResponseRow);
 
         // 最后检查 - 单行
         const lastCheckRow = document.createElement('div');
         lastCheckRow.className = 'mobile-card-row';
-        lastCheckRow.innerHTML = \`
-            <span class="mobile-card-label">最后检查: \${lastCheckTime}</span>
-        \`;
+        lastCheckRow.innerHTML = `
+            <span class="mobile-card-label">最后检查: ${lastCheckTime}</span>
+        `;
         cardBody.appendChild(lastCheckRow);
 
         // 24小时历史记录 - 始终显示，即使没有数据
         const historyContainer = document.createElement('div');
         historyContainer.className = 'mobile-history-container';
-        historyContainer.innerHTML = \`
+        historyContainer.innerHTML = `
             <div class="mobile-history-label">24小时记录</div>
             <div class="history-bar-container"></div>
-        \`;
+        `;
         cardBody.appendChild(historyContainer);
 
         // 使用统一的历史记录渲染函数
@@ -10164,7 +10298,7 @@ async function loadServerUptimeData() {
             const uptimePromises = serverRows.map(row => {
                 const serverId = row.getAttribute('data-server-id');
                 if (!serverId) return null;
-                return publicApiRequest(\`/api/servers/\${serverId}/uptime?period=24h\`)
+                return publicApiRequest(`/api/servers/${serverId}/uptime?period=24h`)
                     .then(res => ({
                         id: serverId,
                         uptime: res.uptime,
@@ -10172,7 +10306,7 @@ async function loadServerUptimeData() {
                         onlineTime: res.onlineTime
                     }))
                     .catch(error => {
-                        console.warn(\`加载服务器 \${serverId} 在线率数据失败:\`, getErrorMessage(error));
+                        console.warn(`加载服务器 ${serverId} 在线率数据失败:`, getErrorMessage(error));
                         return { id: serverId, error: true };
                     });
             }).filter(Boolean);
@@ -10183,13 +10317,13 @@ async function loadServerUptimeData() {
         // 更新每个服务器的在线率显示
         uptimeData.forEach(server => {
             if (server && server.error) {
-                console.warn(\`服务器 \${server.id} 的在线率数据返回错误状态，跳过展示\`);
+                console.warn(`服务器 ${server.id} 的在线率数据返回错误状态，跳过展示`);
                 return;
             }
-            const uptimeCell = document.querySelector(\`.uptime-cell[data-server-id="\${server.id}"]\`);
+            const uptimeCell = document.querySelector(`.uptime-cell[data-server-id="${server.id}"]`);
             let uptimePercentage = Number(server.uptime);
             if (Number.isNaN(uptimePercentage)) {
-                console.warn(\`服务器 \${server.id} 的在线率数据无效，跳过展示\`);
+                console.warn(`服务器 ${server.id} 的在线率数据无效，跳过展示`);
                 return;
             }
             uptimePercentage = Math.min(100, Math.max(0, uptimePercentage));
@@ -10200,19 +10334,19 @@ async function loadServerUptimeData() {
             
             // 更新桌面端显示
             if (uptimeCell) {
-                uptimeCell.innerHTML = \`<span class="\${uptimeClass}" style="cursor: pointer; text-decoration: underline;" onclick="showUptimeHistory('\${server.id}')">\${uptimePercentage}%</span>\`;
+                uptimeCell.innerHTML = `<span class="${uptimeClass}" style="cursor: pointer; text-decoration: underline;" onclick="showUptimeHistory('${server.id}')">${uptimePercentage}%</span>`;
                 const totalHours = server.totalTime ? Math.round(server.totalTime / 60 * 100) / 100 : 0;
-                uptimeCell.title = \`点击查看详细历史 - 在线率: \${uptimePercentage}% (在线\${server.onlineTime || 0}分钟 / 总计\${server.totalTime || 0}分钟，约\${totalHours}小时)\`;
+                uptimeCell.title = `点击查看详细历史 - 在线率: ${uptimePercentage}% (在线${server.onlineTime || 0}分钟 / 总计${server.totalTime || 0}分钟，约${totalHours}小时)`;
             } else {
                 // 如果找不到特定的单元格，尝试通过索引找到对应行的在线率列
-                console.warn(\`无法找到服务器 \${server.id} 的在线率单元格\`);
+                console.warn(`无法找到服务器 ${server.id} 的在线率单元格`);
             }
             
             // 更新移动端显示（使用默认时间段）
-            const mobileUptimeCell = document.getElementById(\`mobile-uptime-\${server.id}\`);
+            const mobileUptimeCell = document.getElementById(`mobile-uptime-${server.id}`);
             if (mobileUptimeCell) {
                 mobileUptimeCell.style.textDecoration = 'underline';
-                const mobileSelect = document.getElementById(\`mobile-period-\${server.id}\`);
+                const mobileSelect = document.getElementById(`mobile-period-${server.id}`);
                 const period = mobileSelect ? mobileSelect.value : '24h';
                 // 初始化移动端在线率显示
                 updateMobileUptimeDisplay(server.id, period);
@@ -10243,19 +10377,19 @@ function showUptimeHistory(serverId) {
     const modal = new bootstrap.Modal(document.getElementById('uptimeHistoryModal'));
     
     // 重置内容为加载状态
-    document.getElementById('uptimeHistoryContent').innerHTML = \`
+    document.getElementById('uptimeHistoryContent').innerHTML = `
         <div class="text-center">
             <div class="spinner-border" role="status">
                 <span class="visually-hidden">加载中...</span>
             </div>
         </div>
-    \`;
+    `;
     
     // 显示所有时间段选项（移动端和桌面端都支持）
     const periodButtons = document.getElementById('uptimePeriodButtons');
     
     // 显示所有时间段选项
-    periodButtons.innerHTML = \`
+    periodButtons.innerHTML = `
         <input type="radio" class="btn-check" name="uptimePeriod" id="period24h" value="24h" checked>
         <label class="btn btn-outline-primary" for="period24h">24小时</label>
         
@@ -10273,7 +10407,7 @@ function showUptimeHistory(serverId) {
         
         <input type="radio" class="btn-check" name="uptimePeriod" id="period365d" value="365d">
         <label class="btn btn-outline-primary" for="period365d">1年</label>
-    \`;
+    `;
     
     // 默认选中24小时
     document.getElementById('period24h').checked = true;
@@ -10295,7 +10429,7 @@ function showUptimeHistory(serverId) {
 async function checkServerHistoryAndAdjustPeriods(serverId) {
     try {
         // 获取服务器信息，检查创建时间
-        const serverInfo = await apiRequest(\`/api/servers/\${serverId}\`);
+        const serverInfo = await apiRequest(`/api/servers/${serverId}`);
         const now = new Date();
         const createdAt = new Date(serverInfo.created_at || serverInfo.added_at);
         const daysSinceCreation = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
@@ -10304,13 +10438,13 @@ async function checkServerHistoryAndAdjustPeriods(serverId) {
         
         if (daysSinceCreation < 30) {
             // 监控历史不足1个月，只显示24小时和3天
-            periodButtons.innerHTML = \`
+            periodButtons.innerHTML = `
                 <input type="radio" class="btn-check" name="uptimePeriod" id="period24h" value="24h">
                 <label class="btn btn-outline-primary" for="period24h">24小时</label>
                 
                 <input type="radio" class="btn-check" name="uptimePeriod" id="period3d" value="3d" checked>
                 <label class="btn btn-outline-primary" for="period3d">3天</label>
-            \`;
+            `;
             document.getElementById('period3d').checked = true;
         }
         
@@ -10334,16 +10468,16 @@ async function loadUptimeHistory(period) {
     if (!currentUptimeServerId) return;
     
     try {
-        const response = await apiRequest(\`/api/servers/\${currentUptimeServerId}/uptime/history?period=\${period}\`);
+        const response = await apiRequest(`/api/servers/${currentUptimeServerId}/uptime/history?period=${period}`);
         renderUptimeHistory(response);
     } catch (error) {
         console.error('加载在线率历史失败:', error);
-        document.getElementById('uptimeHistoryContent').innerHTML = \`
+        document.getElementById('uptimeHistoryContent').innerHTML = `
             <div class="alert alert-danger">
                 <i class="bi bi-exclamation-triangle me-2"></i>
-                加载失败: \${error.message}
+                加载失败: ${error.message}
             </div>
-        \`;
+        `;
     }
 }
 
@@ -10354,7 +10488,7 @@ function renderDowntimeRecords(downtimes, currentPage = 1, pageSize = 10) {
     const endIndex = startIndex + pageSize;
     const paginatedData = downtimes.slice(startIndex, endIndex);
     
-    let html = \`
+    let html = `
         <div class="table-responsive">
             <table class="table table-sm table-striped">
                 <thead>
@@ -10365,7 +10499,7 @@ function renderDowntimeRecords(downtimes, currentPage = 1, pageSize = 10) {
                     </tr>
                 </thead>
                 <tbody>
-    \`;
+    `;
     
     let startTimeF = '';
     let endTimeF = '';
@@ -10373,36 +10507,36 @@ function renderDowntimeRecords(downtimes, currentPage = 1, pageSize = 10) {
         startTimeF = new Date(downtime.startTimeFormatted * 1000).toLocaleString();
         endTimeF = new Date(downtime.endTimeFormatted * 1000).toLocaleString();
         const rowClass = downtime.endTime === null ? 'table-danger' : '';
-        html += \`
-            <tr class="\${rowClass}">
-                <td>\${startTimeF}</td>
-                <td>\${endTimeF}</td>
-                <td>\${downtime.durationFormatted}</td>
+        html += `
+            <tr class="${rowClass}">
+                <td>${startTimeF}</td>
+                <td>${endTimeF}</td>
+                <td>${downtime.durationFormatted}</td>
             </tr>
-        \`;
+        `;
     });
     
-    html += \`
+    html += `
                 </tbody>
             </table>
         </div>
-    \`;
+    `;
     
     // 添加分页控件
     if (totalPages > 1) {
-        html += \`
+        html += `
             <nav aria-label="断开记录分页">
                 <ul class="pagination pagination-sm justify-content-center mb-0">
-        \`;
+        `;
         
         // 上一页
-        html += \`
-            <li class="page-item \${currentPage === 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="changeDowntimePage(\${currentPage - 1}); return false;">
+        html += `
+            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changeDowntimePage(${currentPage - 1}); return false;">
                     <i class="bi bi-chevron-left"></i>
                 </a>
             </li>
-        \`;
+        `;
         
         // 页码
         const maxVisiblePages = 5;
@@ -10414,31 +10548,31 @@ function renderDowntimeRecords(downtimes, currentPage = 1, pageSize = 10) {
         }
         
         for (let i = startPage; i <= endPage; i++) {
-            html += \`
-                <li class="page-item \${i === currentPage ? 'active' : ''}">
-                    <a class="page-link" href="#" onclick="changeDowntimePage(\${i}); return false;">\${i}</a>
+            html += `
+                <li class="page-item ${i === currentPage ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="changeDowntimePage(${i}); return false;">${i}</a>
                 </li>
-            \`;
+            `;
         }
         
         // 下一页
-        html += \`
-            <li class="page-item \${currentPage === totalPages ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="changeDowntimePage(\${currentPage + 1}); return false;">
+        html += `
+            <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" onclick="changeDowntimePage(${currentPage + 1}); return false;">
                     <i class="bi bi-chevron-right"></i>
                 </a>
             </li>
-        \`;
+        `;
         
-        html += \`
+        html += `
                 </ul>
             </nav>
             <div class="text-center mt-2">
                 <small class="text-muted">
-                    显示第 \${startIndex + 1} - \${Math.min(endIndex, downtimes.length)} 条，共 \${downtimes.length} 条记录
+                    显示第 ${startIndex + 1} - ${Math.min(endIndex, downtimes.length)} 条，共 ${downtimes.length} 条记录
                 </small>
             </div>
-        \`;
+        `;
     }
     
     return html;
@@ -10461,45 +10595,45 @@ function renderUptimeHistory(data) {
     const content = document.getElementById('uptimeHistoryContent');
     const starttime = new Date(data.actualStartTime*1000).toLocaleString();
 	const uptimeFormat = formatUptime(data.onlineTime*60);
-    let html = \`
+    let html = `
         <div class="row mb-4">
             <div class="col-md-4">
-                <h6><i class="bi bi-server me-2"></i>\${data.serverName}</h6>
-                <p class="text-muted mb-1">统计时间段: \${data.period}</p>
-                <p class="text-muted">开始时间: \${starttime}</p>
+                <h6><i class="bi bi-server me-2"></i>${data.serverName}</h6>
+                <p class="text-muted mb-1">统计时间段: ${data.period}</p>
+                <p class="text-muted">开始时间: ${starttime}</p>
             </div>
             <div class="col-md-8">
                 <div class="row text-center">
                     <div class="col-3">
                         <div class="border rounded p-2">
-                            <div class="h5 mb-1 \${data.uptime >= 95 ? 'text-success' : data.uptime >= 80 ? 'text-warning' : 'text-danger'}">\${data.uptime}%</div>
+                            <div class="h5 mb-1 ${data.uptime >= 95 ? 'text-success' : data.uptime >= 80 ? 'text-warning' : 'text-danger'}">${data.uptime}%</div>
                             <small class="text-muted">在线率</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="border rounded p-2">
-                            <div class="h5 mb-1 text-success">\${uptimeFormat}</div>
+                            <div class="h5 mb-1 text-success">${uptimeFormat}</div>
                             <small class="text-muted">在线时间</small>
                         </div>
                     </div>
                     <div class="col-3">
                         <div class="border rounded p-2">
-                            <div class="h5 mb-1 text-info">\${data.downtimeCount}</div>
+                            <div class="h5 mb-1 text-info">${data.downtimeCount}</div>
                             <small class="text-muted">断开次数</small>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    \`;
+    `;
     
     // 添加图形化在线率显示
     if (data.chartData && data.chartData.length > 0) {
-        html += \`
+        html += `
             <div class="mb-4">
                 <h6><i class="bi bi-graph-up me-2"></i>在线率图表</h6>
                 <div class="uptime-chart-container" style="height: 60px; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; position: relative;">
-        \`;
+        `;
         let timep='';
         const totalDataPoints = data.chartData.length;
         data.chartData.forEach((point, index) => {
@@ -10507,43 +10641,43 @@ function renderUptimeHistory(data) {
             const left = (index * width);
             const color = point.status === 'online' ? '#28a745' : '#dc3545'; // 绿色在线，红色离线
             timep = new Date(point.timeFormatted*1000).toLocaleString();
-            html += \`
+            html += `
                 <div class="uptime-bar" 
                      style="position: absolute; 
-                            left: \${left}%; 
-                            width: \${width}%; 
+                            left: ${left}%; 
+                            width: ${width}%; 
                             height: 100%; 
-                            background-color: \${color}; 
+                            background-color: ${color}; 
                             border-right: 1px solid #fff;"
-                     title="\${timep}: \${point.status === 'online' ? '在线' : '离线'}">
+                     title="${timep}: ${point.status === 'online' ? '在线' : '离线'}">
                 </div>
-            \`;
+            `;
         });
         
-        html += \`
+        html += `
                 </div>
                 <div class="d-flex justify-content-between mt-1 text-muted small">
                     <span>开始时间</span>
                     <span>现在</span>
                 </div>
             </div>
-        \`;
+        `;
     }
     
     if (data.downtimes && data.downtimes.length > 0) {
-        html += \`
-            <h6><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>断开记录 (共\${data.downtimes.length}条)</h6>
+        html += `
+            <h6><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>断开记录 (共${data.downtimes.length}条)</h6>
             <div id="downtimeRecords">
-                \${renderDowntimeRecords(data.downtimes, 1, 10)}
+                ${renderDowntimeRecords(data.downtimes, 1, 10)}
             </div>
-        \`;
+        `;
     } else {
-        html += \`
+        html += `
             <div class="alert alert-success">
                 <i class="bi bi-check-circle me-2"></i>
                 在此时间段内没有断开记录，服务器一直保持在线状态！
             </div>
-        \`;
+        `;
     }
     
     content.innerHTML = html;
@@ -10641,24 +10775,24 @@ function renderServerTable(allStatuses) {
         mainRow.classList.add('server-row');
         mainRow.setAttribute('data-server-id', serverId);
         mainRow.setAttribute('data-realtime-endpoint', realtime_endpoint);
-        mainRow.innerHTML = \`
-            <td>\${serverName}</td>
-            <td>\${statusBadge}</td>
-            <td>\${cpuHtml}</td>
-            <td>\${memoryHtml}</td>
-            <td>\${diskHtml}</td>
-            <td><span style="color: #000;">\${uploadSpeed}</span></td>
-            <td><span style="color: #000;">\${downloadSpeed}</span></td>
-            <td><span style="color: #000;">\${totalUpload}</span></td>
-            <td><span style="color: #000;">\${totalDownload}</span></td>
-            <td><span style="color: #000;">\${uptime}</span></td>
-            <td class="uptime-cell" data-server-id="\${serverId}">-</td>
-            <td><span style="color: #000;">\${lastUpdate}</span></td>
-            <td><span style="display: none" data-realtime-endpoint="\${realtime_endpoint}">-</span></td>
+        mainRow.innerHTML = `
+            <td>${serverName}</td>
+            <td>${statusBadge}</td>
+            <td>${cpuHtml}</td>
+            <td>${memoryHtml}</td>
+            <td>${diskHtml}</td>
+            <td><span style="color: #000;">${uploadSpeed}</span></td>
+            <td><span style="color: #000;">${downloadSpeed}</span></td>
+            <td><span style="color: #000;">${totalUpload}</span></td>
+            <td><span style="color: #000;">${totalDownload}</span></td>
+            <td><span style="color: #000;">${uptime}</span></td>
+            <td class="uptime-cell" data-server-id="${serverId}">-</td>
+            <td><span style="color: #000;">${lastUpdate}</span></td>
+            <td><span style="display: none" data-realtime-endpoint="${realtime_endpoint}">-</span></td>
             <td>
                 <!-- 实时监控按钮已移除 -->
             </td>
-        \`;
+        `;
 
         // Clone the details row template
         const detailsRowElement = detailsTemplate.content.cloneNode(true).querySelector('tr');
@@ -10704,13 +10838,13 @@ function renderServerTable(allStatuses) {
 function formatNetworkSpeed(bytesPerSecond) {
     if (typeof bytesPerSecond !== 'number' || isNaN(bytesPerSecond)) return '-';
     if (bytesPerSecond < 1024) {
-        return \`\${bytesPerSecond.toFixed(1)} B/s\`;
+        return `${bytesPerSecond.toFixed(1)} B/s`;
     } else if (bytesPerSecond < 1024 * 1024) {
-        return \`\${(bytesPerSecond / 1024).toFixed(1)} KB/s\`;
+        return `${(bytesPerSecond / 1024).toFixed(1)} KB/s`;
     } else if (bytesPerSecond < 1024 * 1024 * 1024) {
-        return \`\${(bytesPerSecond / (1024 * 1024)).toFixed(1)} MB/s\`;
+        return `${(bytesPerSecond / (1024 * 1024)).toFixed(1)} MB/s`;
     } else {
-        return \`\${(bytesPerSecond / (1024 * 1024 * 1024)).toFixed(1)} GB/s\`;
+        return `${(bytesPerSecond / (1024 * 1024 * 1024)).toFixed(1)} GB/s`;
     }
 }
 
@@ -10718,15 +10852,15 @@ function formatNetworkSpeed(bytesPerSecond) {
 function formatDataSize(bytes) {
     if (typeof bytes !== 'number' || isNaN(bytes)) return '-';
     if (bytes < 1024) {
-        return \`\${bytes.toFixed(1)} B\`;
+        return `${bytes.toFixed(1)} B`;
     } else if (bytes < 1024 * 1024) {
-        return \`\${(bytes / 1024).toFixed(1)} KB\`;
+        return `${(bytes / 1024).toFixed(1)} KB`;
     } else if (bytes < 1024 * 1024 * 1024) {
-        return \`\${(bytes / (1024 * 1024)).toFixed(1)} MB\`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     } else if (bytes < 1024 * 1024 * 1024 * 1024) {
-        return \`\${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB\`;
+        return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
     } else {
-        return \`\${(bytes / (1024 * 1024 * 1024 * 1024)).toFixed(1)} TB\`;
+        return `${(bytes / (1024 * 1024 * 1024 * 1024)).toFixed(1)} TB`;
     }
 }
 
@@ -10744,13 +10878,13 @@ function formatUptime(totalSeconds) {
 
     let uptimeString = '';
     if (days > 0) {
-        uptimeString += \`\${days}天 \`;
+        uptimeString += `${days}天 `;
     }
     if (hours > 0) {
-        uptimeString += \`\${hours}小时 \`;
+        uptimeString += `${hours}小时 `;
     }
     if (minutes > 0 || (days === 0 && hours === 0)) { // Show minutes if it's the only unit or if other units are zero
-        uptimeString += \`\${minutes}分钟\`;
+        uptimeString += `${minutes}分钟`;
     }
 
     return uptimeString.trim() || '0分钟'; // Default to 0 minutes if string is empty
@@ -10803,7 +10937,7 @@ async function renderSiteStatusTable(sites) {
         const row = document.createElement('tr');
         const statusInfo = getSiteStatusBadge(site.last_status);
         const lastCheckTime = site.last_checked ? new Date(site.last_checked * 1000).toLocaleString() : '从未';
-        const responseTime = site.last_response_time_ms !== null ? \`\${site.last_response_time_ms} ms\` : '-';
+        const responseTime = site.last_response_time_ms !== null ? `${site.last_response_time_ms} ms` : '-';
 
         // 在线率单元格
         const uptimeCell = document.createElement('td');
@@ -10817,13 +10951,13 @@ async function renderSiteStatusTable(sites) {
         historyCell.setAttribute('data-site-id', site.id);
         historyCell.innerHTML = '<div class="history-bar-container d-flex justify-content-center"></div>';
         
-        row.innerHTML = \`
-            <td>\${site.name || '-'}</td>
-            <td><span class="badge \${statusInfo.class}">\${statusInfo.text}</span></td>
-            <td>\${site.last_status_code || '-'}</td>
-            <td>\${responseTime}</td>
-            <td>\${lastCheckTime}</td>
-        \`;
+        row.innerHTML = `
+            <td>${site.name || '-'}</td>
+            <td><span class="badge ${statusInfo.class}">${statusInfo.text}</span></td>
+            <td>${site.last_status_code || '-'}</td>
+            <td>${responseTime}</td>
+            <td>${lastCheckTime}</td>
+        `;
         row.appendChild(uptimeCell);
         row.appendChild(historyCell);
         tableBody.appendChild(row);
@@ -10873,7 +11007,7 @@ async function loadSiteUptimeData() {
             const siteId = cell.getAttribute('data-site-id');
             if (!siteId) return null;
             try {
-                const res = await publicApiRequest(\`/api/sites/\${siteId}/uptime?period=24h\`);
+                const res = await publicApiRequest(`/api/sites/${siteId}/uptime?period=24h`);
                 if (res && res.uptime !== undefined) {
                     return {
                         id: siteId,
@@ -10883,7 +11017,7 @@ async function loadSiteUptimeData() {
                     };
                 }
             } catch (err) {
-                console.warn(\`公共网站在线率接口失败（\${siteId}）：\`, err);
+                console.warn(`公共网站在线率接口失败（${siteId}）：`, err);
             }
             return null;
         });
@@ -10906,18 +11040,18 @@ async function loadSiteUptimeData() {
     }
 
     uptimeData.forEach(site => {
-        const uptimeCell = document.querySelector(\`td.uptime-cell[data-site-id="\${site.id}"]\`);
+        const uptimeCell = document.querySelector(`td.uptime-cell[data-site-id="${site.id}"]`);
         if (uptimeCell && site.uptime !== undefined && site.uptime !== null) {
             const uptimePercentage = Number(site.uptime);
             let uptimeClass = 'text-success';
             if (uptimePercentage < 95) uptimeClass = 'text-warning';
             if (uptimePercentage < 80) uptimeClass = 'text-danger';
             
-            uptimeCell.innerHTML = \`<span class="\${uptimeClass}" style="cursor: pointer; text-decoration: underline;" onclick="showSiteUptimeHistory('\${site.id}')">\${uptimePercentage}%</span>\`;
+            uptimeCell.innerHTML = `<span class="${uptimeClass}" style="cursor: pointer; text-decoration: underline;" onclick="showSiteUptimeHistory('${site.id}')">${uptimePercentage}%</span>`;
             const totalHours = site.totalTime !== undefined ? Math.round((site.totalTime || 0) / 60 * 100) / 100 : 0;
             const onlineMinutes = site.onlineTime !== undefined ? site.onlineTime : 0;
             const totalMinutes = site.totalTime !== undefined ? site.totalTime : 0;
-            uptimeCell.title = \`点击查看详细历史 - 在线率: \${uptimePercentage}% (在线\${onlineMinutes}分钟 / 总计\${totalMinutes}分钟，约\${totalHours}小时)\`;
+            uptimeCell.title = `点击查看详细历史 - 在线率: ${uptimePercentage}% (在线${onlineMinutes}分钟 / 总计${totalMinutes}分钟，约${totalHours}小时)`;
         } else if (uptimeCell) {
             uptimeCell.innerHTML = '<span class="text-muted">-</span>';
             uptimeCell.title = '暂无在线率数据';
@@ -10943,14 +11077,14 @@ async function loadSiteHistoryData() {
                 const siteId = historyCell.getAttribute('data-site-id');
                 if (siteId) {
                     try {
-                        const response = await publicApiRequest(\`/api/sites/\${siteId}/history\`);
+                        const response = await publicApiRequest(`/api/sites/${siteId}/history`);
                         if (response && response.history) {
                             renderSiteHistoryBar(container, response.history);
                         } else {
                             container.innerHTML = '<small class="text-muted">无记录</small>';
                         }
                     } catch (error) {
-                        console.error(\`加载网站 \${siteId} 历史数据失败:\`, error);
+                        console.error(`加载网站 ${siteId} 历史数据失败:`, error);
                         container.innerHTML = '<small class="text-muted">加载失败</small>';
                     }
                 }
@@ -10980,13 +11114,13 @@ function showSiteUptimeHistory(siteId) {
     const modal = new bootstrap.Modal(document.getElementById('siteUptimeHistoryModal'));
     
     // 重置内容为加载状态
-    document.getElementById('siteUptimeHistoryContent').innerHTML = \`
+    document.getElementById('siteUptimeHistoryContent').innerHTML = `
         <div class="text-center">
             <div class="spinner-border" role="status">
                 <span class="visually-hidden">加载中...</span>
             </div>
         </div>
-    \`;
+    `;
     
     // 设置默认时间段为24小时
     document.getElementById('sitePeriod24h').checked = true;
@@ -11000,7 +11134,7 @@ async function loadSiteUptimeHistory(period) {
     if (!currentSiteUptimeId) return;
     
     try {
-        const response = await apiRequest(\`/api/sites/\${currentSiteUptimeId}/uptime/history?period=\${period}\`);
+        const response = await apiRequest(`/api/sites/${currentSiteUptimeId}/uptime/history?period=${period}`);
         renderSiteUptimeHistory(response);
     } catch (error) {
         console.error('加载网站在线率历史失败:', error);
@@ -11019,19 +11153,19 @@ async function loadSiteUptimeHistory(period) {
             errorMessage = '网络连接失败，请检查网络连接';
         }
         
-        document.getElementById('siteUptimeHistoryContent').innerHTML = \`
+        document.getElementById('siteUptimeHistoryContent').innerHTML = `
             <div class="alert alert-danger">
                 <i class="bi bi-exclamation-triangle me-2"></i>
                 <strong>加载失败</strong><br>
-                \${errorMessage}<br>
-                <small class="text-muted">错误详情: \${error.message}</small>
+                ${errorMessage}<br>
+                <small class="text-muted">错误详情: ${error.message}</small>
             </div>
             <div class="text-center mt-3">
                 <button class="btn btn-outline-primary btn-sm" onclick="loadSiteUptimeHistory('24h')">
                     <i class="bi bi-arrow-clockwise me-1"></i>重试
                 </button>
             </div>
-        \`;
+        `;
     }
 }
 
@@ -11039,41 +11173,41 @@ async function loadSiteUptimeHistory(period) {
 function renderSiteUptimeHistory(data) {
     const content = document.getElementById('siteUptimeHistoryContent');
     
-    let html = \`
+    let html = `
         <div class="row mb-4">
             <div class="col-md-6">
-                <h6><i class="bi bi-globe me-2"></i>\${data.siteName}</h6>
-                <p class="text-muted mb-1">URL: \${data.siteUrl}</p>
-                <p class="text-muted mb-1">统计时间段: \${data.period}</p>
-                <p class="text-muted">开始时间: \${data.startTimeFormatted}</p>
+                <h6><i class="bi bi-globe me-2"></i>${data.siteName}</h6>
+                <p class="text-muted mb-1">URL: ${data.siteUrl}</p>
+                <p class="text-muted mb-1">统计时间段: ${data.period}</p>
+                <p class="text-muted">开始时间: ${data.startTimeFormatted}</p>
             </div>
             <div class="col-md-6">
                 <div class="row text-center">
                     <div class="col-4">
                         <div class="border rounded p-2">
-                            <div class="h5 mb-1 \${data.uptime >= 95 ? 'text-success' : data.uptime >= 80 ? 'text-warning' : 'text-danger'}">\${data.uptime}%</div>
+                            <div class="h5 mb-1 ${data.uptime >= 95 ? 'text-success' : data.uptime >= 80 ? 'text-warning' : 'text-danger'}">${data.uptime}%</div>
                             <small class="text-muted">在线率</small>
                         </div>
                     </div>
                     <div class="col-4">
                         <div class="border rounded p-2">
-                            <div class="h5 mb-1 text-success">\${data.onlineTime}分</div>
+                            <div class="h5 mb-1 text-success">${data.onlineTime}分</div>
                             <small class="text-muted">在线时间</small>
                         </div>
                     </div>
                     <div class="col-4">
                         <div class="border rounded p-2">
-                            <div class="h5 mb-1 text-info">\${data.downtimeCount}</div>
+                            <div class="h5 mb-1 text-info">${data.downtimeCount}</div>
                             <small class="text-muted">断开次数</small>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    \`;
+    `;
     
     if (data.downtimes && data.downtimes.length > 0) {
-        html += \`
+        html += `
             <h6><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>断开记录</h6>
             <div class="table-responsive">
                 <table class="table table-sm table-striped">
@@ -11089,51 +11223,51 @@ function renderSiteUptimeHistory(data) {
                         </tr>
                     </thead>
                     <tbody>
-        \`;
+        `;
         
         data.downtimes.forEach(downtime => {
             const rowClass = downtime.endTime === null ? 'table-danger' : '';
-            html += \`
-                <tr class="\${rowClass}">
-                    <td>\${downtime.startTimeFormatted}</td>
-                    <td>\${downtime.endTimeFormatted}</td>
-                    <td>\${downtime.durationFormatted}</td>
-                    <td>\${downtime.statusCode}</td>
-                    <td>\${downtime.responseTimeMs === '-' ? '-' : downtime.responseTimeMs + 'ms'}</td>
+            html += `
+                <tr class="${rowClass}">
+                    <td>${downtime.startTimeFormatted}</td>
+                    <td>${downtime.endTimeFormatted}</td>
+                    <td>${downtime.durationFormatted}</td>
+                    <td>${downtime.statusCode}</td>
+                    <td>${downtime.responseTimeMs === '-' ? '-' : downtime.responseTimeMs + 'ms'}</td>
                     <td>
-                        <span class="note-display" id="note-\${downtime.id}">\${downtime.note || '无备注'}</span>
-                        <input type="text" class="form-control form-control-sm note-input d-none" id="input-\${downtime.id}" value="\${downtime.note || ''}" maxlength="100">
+                        <span class="note-display" id="note-${downtime.id}">${downtime.note || '无备注'}</span>
+                        <input type="text" class="form-control form-control-sm note-input d-none" id="input-${downtime.id}" value="${downtime.note || ''}" maxlength="100">
                     </td>
                     <td>
                         <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-primary btn-sm edit-note-btn" onclick="editNote('\${downtime.id}')" title="编辑备注">
+                            <button class="btn btn-outline-primary btn-sm edit-note-btn" onclick="editNote('${downtime.id}')" title="编辑备注">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button class="btn btn-outline-success btn-sm save-note-btn d-none" onclick="saveNote('\${downtime.id}')" title="保存">
+                            <button class="btn btn-outline-success btn-sm save-note-btn d-none" onclick="saveNote('${downtime.id}')" title="保存">
                                 <i class="bi bi-check"></i>
                             </button>
-                            <button class="btn btn-outline-secondary btn-sm cancel-note-btn d-none" onclick="cancelEditNote('\${downtime.id}')" title="取消">
+                            <button class="btn btn-outline-secondary btn-sm cancel-note-btn d-none" onclick="cancelEditNote('${downtime.id}')" title="取消">
                                 <i class="bi bi-x"></i>
                             </button>
-                            \${downtime.endTime !== null ? \`<button class="btn btn-outline-danger btn-sm" onclick="deleteDowntime('\${downtime.id}')" title="删除记录"><i class="bi bi-trash"></i></button>\` : ''}
+                            ${downtime.endTime !== null ? `<button class="btn btn-outline-danger btn-sm" onclick="deleteDowntime('${downtime.id}')" title="删除记录"><i class="bi bi-trash"></i></button>` : ''}
                         </div>
                     </td>
                 </tr>
-            \`;
+            `;
         });
         
-        html += \`
+        html += `
                     </tbody>
                 </table>
             </div>
-        \`;
+        `;
     } else {
-        html += \`
+        html += `
             <div class="alert alert-success">
                 <i class="bi bi-check-circle me-2"></i>
                 在此时间段内没有断开记录，网站一直保持在线状态！
             </div>
-        \`;
+        `;
     }
     
     content.innerHTML = html;
@@ -11141,8 +11275,8 @@ function renderSiteUptimeHistory(data) {
 
 // 编辑备注
 function editNote(downtimeId) {
-    const display = document.getElementById(\`note-\${downtimeId}\`);
-    const input = document.getElementById(\`input-\${downtimeId}\`);
+    const display = document.getElementById(`note-${downtimeId}`);
+    const input = document.getElementById(`input-${downtimeId}`);
     const editBtn = display.parentElement.parentElement.querySelector('.edit-note-btn');
     const saveBtn = display.parentElement.parentElement.querySelector('.save-note-btn');
     const cancelBtn = display.parentElement.parentElement.querySelector('.cancel-note-btn');
@@ -11158,8 +11292,8 @@ function editNote(downtimeId) {
 
 // 取消编辑备注
 function cancelEditNote(downtimeId) {
-    const display = document.getElementById(\`note-\${downtimeId}\`);
-    const input = document.getElementById(\`input-\${downtimeId}\`);
+    const display = document.getElementById(`note-${downtimeId}`);
+    const input = document.getElementById(`input-${downtimeId}`);
     const editBtn = display.parentElement.parentElement.querySelector('.edit-note-btn');
     const saveBtn = display.parentElement.parentElement.querySelector('.save-note-btn');
     const cancelBtn = display.parentElement.parentElement.querySelector('.cancel-note-btn');
@@ -11173,13 +11307,13 @@ function cancelEditNote(downtimeId) {
 
 // 保存备注
 async function saveNote(downtimeId) {
-    const display = document.getElementById(\`note-\${downtimeId}\`);
-    const input = document.getElementById(\`input-\${downtimeId}\`);
+    const display = document.getElementById(`note-${downtimeId}`);
+    const input = document.getElementById(`input-${downtimeId}`);
     const newNote = input.value.trim();
     
     try {
         // 这里需要实现保存备注的API调用
-        await apiRequest(\`/api/sites/downtime/\${downtimeId}/note\`, {
+        await apiRequest(`/api/sites/downtime/${downtimeId}/note`, {
             method: 'PUT',
             body: JSON.stringify({ note: newNote })
         });
@@ -11200,7 +11334,7 @@ async function deleteDowntime(downtimeId) {
     }
     
     try {
-        await apiRequest(\`/api/sites/downtime/\${downtimeId}\`, {
+        await apiRequest(`/api/sites/downtime/${downtimeId}`, {
             method: 'DELETE'
         });
         
@@ -11235,7 +11369,7 @@ function renderSiteHistoryBar(containerElement, history) {
         );
 
         let barClass = 'history-bar-pending';
-        let titleText = \`\${String(slotStart.getHours()).padStart(2, '0')}:00 - \${String((slotStart.getHours() + 1) % 24).padStart(2, '0')}:00: 无记录\`;
+        let titleText = `${String(slotStart.getHours()).padStart(2, '0')}:00 - ${String((slotStart.getHours() + 1) % 24).padStart(2, '0')}:00: 无记录`;
 
         if (recordForHour) {
             if (recordForHour.status === 'UP') {
@@ -11254,11 +11388,11 @@ function renderSiteHistoryBar(containerElement, history) {
                 barClass = 'history-bar-down';
             }
             const recordDate = new Date(recordForHour.timestamp * 1000);
-            const responseTimeText = recordForHour.response_time_ms ? \`\${recordForHour.response_time_ms}ms\` : '-';
-            titleText = \`\${recordDate.toLocaleString()}: \${recordForHour.status} (\${recordForHour.status_code || 'N/A'}), \${responseTimeText}\`;
+            const responseTimeText = recordForHour.response_time_ms ? `${recordForHour.response_time_ms}ms` : '-';
+            titleText = `${recordDate.toLocaleString()}: ${recordForHour.status} (${recordForHour.status_code || 'N/A'}), ${responseTimeText}`;
         }
 
-        historyHtml += \`<div class="history-bar \${barClass}" title="\${titleText}"></div>\`;
+        historyHtml += `<div class="history-bar ${barClass}" title="${titleText}"></div>`;
     }
 
     containerElement.innerHTML = historyHtml;
@@ -11353,7 +11487,7 @@ function applyGlobalBackgroundSettings(enabled, url, opacity) {
         const img = new Image();
         img.onload = function() {
             // 图片加载成功，应用背景
-            body.style.setProperty('--custom-background-url', \`url(\${url})\`);
+            body.style.setProperty('--custom-background-url', `url(${url})`);
             body.style.setProperty('--page-opacity', opacity / 100);
             body.classList.add('custom-background-enabled');
 
@@ -11406,18 +11540,18 @@ function showCpuHistoryModal(serverId) {
     const serverName = serverDataCache[serverId]?.server?.name || '服务器';
     const modalTitle = document.getElementById('cpuHistoryModalLabel');
     if (modalTitle) {
-        modalTitle.textContent = \`\${serverName} - 24小时CPU使用率历史详情\`;
+        modalTitle.textContent = `${serverName} - 24小时CPU使用率历史详情`;
     }
 
     const chartContainer = document.getElementById('cpuHistoryChartContainer');
     if (chartContainer) {
-        chartContainer.innerHTML = \`
+        chartContainer.innerHTML = `
             <div class="text-center p-5">
                 <div class="spinner-border" role="status">
                     <span class="visually-hidden">加载中...</span>
                 </div>
             </div>
-        \`;
+        `;
     }
     
     modal.show();
@@ -11430,20 +11564,20 @@ async function renderZoomedCpuChart(serverId) {
     if (!chartContainer) return;
 
     try {
-        const response = await fetch(\`/api/servers/\${serverId}/cpu/history\`);
+        const response = await fetch(`/api/servers/${serverId}/cpu/history`);
         if (!response.ok) {
-            throw new Error(\`HTTP \${response.status}\`);
+            throw new Error(`HTTP ${response.status}`);
         }
         
         const data = await response.json();
         const cpuHistory = data.history || [];
         
         if (cpuHistory.length === 0) {
-            chartContainer.innerHTML = \`
+            chartContainer.innerHTML = `
                 <div class="text-center p-5 text-muted">
                     <i class="bi bi-info-circle me-2"></i>暂无CPU历史数据
                 </div>
-            \`;
+            `;
             return;
         }
         
@@ -11496,7 +11630,7 @@ async function renderZoomedCpuChart(serverId) {
             label.setAttribute('text-anchor', 'end');
             label.setAttribute('font-size', '12');
             label.setAttribute('fill', '#666');
-            label.textContent = \`\${value.toFixed(1)}%\`;
+            label.textContent = `${value.toFixed(1)}%`;
             svg.appendChild(label);
         }
         
@@ -11512,7 +11646,7 @@ async function renderZoomedCpuChart(serverId) {
             timeLabel.setAttribute('font-size', '11');
             timeLabel.setAttribute('fill', '#666');
             const date = new Date(timeValue);
-            timeLabel.textContent = \`\${date.getHours().toString().padStart(2, '0')}:\${date.getMinutes().toString().padStart(2, '0')}\`;
+            timeLabel.textContent = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
             svg.appendChild(timeLabel);
         }
         
@@ -11523,9 +11657,9 @@ async function renderZoomedCpuChart(serverId) {
             const y = padding.top + chartHeight - (point.usage / maxUsage) * chartHeight;
             
             if (index === 0) {
-                path += \`M \${x} \${y}\`;
+                path += `M ${x} ${y}`;
             } else {
-                path += \` L \${x} \${y}\`;
+                path += ` L ${x} ${y}`;
             }
         });
         
@@ -11560,7 +11694,7 @@ async function renderZoomedCpuChart(serverId) {
         chartContainer.appendChild(svg);
         
     } catch (error) {
-        chartContainer.innerHTML = \`<div class="text-center p-5 text-danger">加载图表失败: \${error.message}</div>\`;
+        chartContainer.innerHTML = `<div class="text-center p-5 text-danger">加载图表失败: ${error.message}</div>`;
     }
 }
 
@@ -11577,18 +11711,18 @@ function showTrafficHistoryModal(serverId) {
     const serverName = serverDataCache[serverId]?.server?.name || '服务器';
     const modalTitle = document.getElementById('trafficHistoryModalLabel');
     if (modalTitle) {
-        modalTitle.textContent = \`\${serverName} - 24小时流量历史详情\`;
+        modalTitle.textContent = `${serverName} - 24小时流量历史详情`;
     }
 
     const chartContainer = document.getElementById('trafficHistoryChartContainer');
     if (chartContainer) {
-        chartContainer.innerHTML = \`
+        chartContainer.innerHTML = `
             <div class="text-center p-5">
                 <div class="spinner-border" role="status">
                     <span class="visually-hidden">加载中...</span>
                 </div>
             </div>
-        \`;
+        `;
     }
     
     modal.show();
@@ -11601,7 +11735,7 @@ async function renderZoomedTrafficChart(serverId) {
     if (!chartContainer) return;
 
     try {
-        const response = await fetch(\`/api/servers/\${serverId}/traffic/history\`);
+        const response = await fetch(`/api/servers/${serverId}/traffic/history`);
         if (!response.ok) throw new Error('Failed to load data');
         const data = await response.json();
         const history = data.history || [];
@@ -11619,7 +11753,7 @@ async function renderZoomedTrafficChart(serverId) {
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('width', '100%');
         svg.setAttribute('height', '100%');
-        svg.setAttribute('viewBox', \`0 0 \${viewBoxWidth} \${viewBoxHeight}\`);
+        svg.setAttribute('viewBox', `0 0 ${viewBoxWidth} ${viewBoxHeight}`);
         svg.setAttribute('preserveAspectRatio', 'xMinYMid meet');
         svg.style.position = 'absolute';
         svg.style.width = '100%';
@@ -11701,11 +11835,11 @@ async function renderZoomedTrafficChart(serverId) {
             const downloadY = padding.top + chartHeight - (item.download / maxTraffic) * chartHeight;
             
             if (index === 0) {
-                uploadPath += \`M \${x} \${uploadY}\`;
-                downloadPath += \`M \${x} \${downloadY}\`;
+                uploadPath += `M ${x} ${uploadY}`;
+                downloadPath += `M ${x} ${downloadY}`;
             } else {
-                uploadPath += \` L \${x} \${uploadY}\`;
-                downloadPath += \` L \${x} \${downloadY}\`;
+                uploadPath += ` L ${x} ${uploadY}`;
+                downloadPath += ` L ${x} ${downloadY}`;
             }
         });
         
@@ -11766,7 +11900,7 @@ async function renderZoomedTrafficChart(serverId) {
         
         chartContainer.appendChild(svg);
     } catch (error) {
-        chartContainer.innerHTML = \`<div class="text-center p-5 text-danger">加载图表失败: \${error.message}</div>\`;
+        chartContainer.innerHTML = `<div class="text-center p-5 text-danger">加载图表失败: ${error.message}</div>`;
     }
 }
 `;
@@ -11781,13 +11915,34 @@ function getLoginJs() {
 const THEME_KEY = 'vps-monitor-theme';
 const LIGHT_THEME = 'light';
 const DARK_THEME = 'dark';
+const SYSTEM_THEME_QUERY = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+function getPreferredTheme() {
+    const storedTheme = localStorage.getItem(THEME_KEY);
+    if (storedTheme) return storedTheme;
+    return SYSTEM_THEME_QUERY?.matches ? DARK_THEME : LIGHT_THEME;
+}
 
 function initializeTheme() {
     const themeToggler = document.getElementById('themeToggler');
     if (!themeToggler) return;
 
-    const storedTheme = localStorage.getItem(THEME_KEY) || LIGHT_THEME;
-    applyTheme(storedTheme);
+    applyTheme(getPreferredTheme());
+
+    const syncWithSystem = (event) => {
+        if (!localStorage.getItem(THEME_KEY)) {
+            const prefersDark = event?.matches ?? (SYSTEM_THEME_QUERY?.matches ?? false);
+            applyTheme(prefersDark ? DARK_THEME : LIGHT_THEME);
+        }
+    };
+
+    if (SYSTEM_THEME_QUERY) {
+        if (SYSTEM_THEME_QUERY.addEventListener) {
+            SYSTEM_THEME_QUERY.addEventListener('change', syncWithSystem);
+        } else if (SYSTEM_THEME_QUERY.addListener) {
+            SYSTEM_THEME_QUERY.addListener(syncWithSystem);
+        }
+    }
 
     themeToggler.addEventListener('click', () => {
         const currentTheme = document.documentElement.getAttribute('data-bs-theme');
@@ -11880,7 +12035,7 @@ async function apiRequest(url, options = {}) {
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || \`请求失败 (\${response.status})\`);
+            throw new Error(errorData.message || `请求失败 (${response.status})`);
         }
 
         return await response.json();
@@ -11949,7 +12104,7 @@ async function login(username, password) {
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || \`登录失败 (\${response.status})\`);
+            throw new Error(errorData.message || `登录失败 (${response.status})`);
         }
 
         const data = await response.json();
@@ -12053,7 +12208,7 @@ function applyGlobalBackgroundSettings(enabled, url, opacity) {
         const img = new Image();
         img.onload = function() {
             // 图片加载成功，应用背景
-            body.style.setProperty('--custom-background-url', \`url(\${url})\`);
+            body.style.setProperty('--custom-background-url', `url(${url})`);
             body.style.setProperty('--page-opacity', opacity / 100);
             body.classList.add('custom-background-enabled');
 
@@ -12129,7 +12284,7 @@ async function apiRequest(url, options = {}) {
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || \`请求失败 (\${response.status})\`);
+            throw new Error(errorData.message || `请求失败 (${response.status})`);
         }
 
         return await response.json();
@@ -12175,13 +12330,34 @@ async function initializeVpsDataUpdates() {
 const THEME_KEY = 'vps-monitor-theme';
 const LIGHT_THEME = 'light';
 const DARK_THEME = 'dark';
+const SYSTEM_THEME_QUERY = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+function getPreferredTheme() {
+    const storedTheme = localStorage.getItem(THEME_KEY);
+    if (storedTheme) return storedTheme;
+    return SYSTEM_THEME_QUERY?.matches ? DARK_THEME : LIGHT_THEME;
+}
 
 function initializeTheme() {
     const themeToggler = document.getElementById('themeToggler');
     if (!themeToggler) return;
 
-    const storedTheme = localStorage.getItem(THEME_KEY) || LIGHT_THEME;
-    applyTheme(storedTheme);
+    applyTheme(getPreferredTheme());
+
+    const syncWithSystem = (event) => {
+        if (!localStorage.getItem(THEME_KEY)) {
+            const prefersDark = event?.matches ?? (SYSTEM_THEME_QUERY?.matches ?? false);
+            applyTheme(prefersDark ? DARK_THEME : LIGHT_THEME);
+        }
+    };
+
+    if (SYSTEM_THEME_QUERY) {
+        if (SYSTEM_THEME_QUERY.addEventListener) {
+            SYSTEM_THEME_QUERY.addEventListener('change', syncWithSystem);
+        } else if (SYSTEM_THEME_QUERY.addListener) {
+            SYSTEM_THEME_QUERY.addListener(syncWithSystem);
+        }
+    }
 
     themeToggler.addEventListener('click', () => {
         const currentTheme = document.documentElement.getAttribute('data-bs-theme');
@@ -12337,7 +12513,7 @@ async function initializeUptime() {
             method: 'POST'
         });
         
-        showToast('success', \`已初始化 \${response.count || 0} 个服务器的在线率\`);
+        showToast('success', `已初始化 ${response.count || 0} 个服务器的在线率`);
         
         // 刷新在线率显示
         setTimeout(() => {
@@ -13349,7 +13525,7 @@ function renderSiteTable(sites) {
 
         const statusInfo = getSiteStatusBadge(site.last_status);
         const lastCheckTime = site.last_checked ? new Date(site.last_checked * 1000).toLocaleString() : '从未';
-        const responseTime = site.last_response_time_ms !== null ? \`\${site.last_response_time_ms} ms\` : '-';
+        const responseTime = site.last_response_time_ms !== null ? `${site.last_response_time_ms} ms` : '-';
 
         // 智能状态显示：完整保存更新中按钮的所有状态
         const existingToggle = document.querySelector('.site-visibility-toggle[data-site-id="' + site.id + '"]');
@@ -13357,40 +13533,40 @@ function renderSiteTable(sites) {
         const displayState = isCurrentlyUpdating ? existingToggle.checked : site.is_public;
         const needsUpdatingState = isCurrentlyUpdating;
 
-        row.innerHTML = \`
+        row.innerHTML = `
              <td>
                 <div class="btn-group btn-group-sm">
                     <i class="bi bi-grip-vertical text-muted me-2" style="cursor: grab;" title="拖拽排序"></i>
-                     <button class="btn btn-outline-secondary move-site-btn" data-id="\${site.id}" data-direction="up" \${index === 0 ? 'disabled' : ''} title="上移">
+                     <button class="btn btn-outline-secondary move-site-btn" data-id="${site.id}" data-direction="up" ${index === 0 ? 'disabled' : ''} title="上移">
                         <i class="bi bi-arrow-up"></i>
                     </button>
-                     <button class="btn btn-outline-secondary move-site-btn" data-id="\${site.id}" data-direction="down" \${index === sites.length - 1 ? 'disabled' : ''} title="下移">
+                     <button class="btn btn-outline-secondary move-site-btn" data-id="${site.id}" data-direction="down" ${index === sites.length - 1 ? 'disabled' : ''} title="下移">
                         <i class="bi bi-arrow-down"></i>
                     </button>
                 </div>
             </td>
-            <td>\${site.name || '-'}</td>
-            <td><a href="\${site.url}" target="_blank" rel="noopener noreferrer">\${site.url}</a></td>
-            <td><span class="badge \${statusInfo.class}">\${statusInfo.text}</span></td>
-            <td>\${site.last_status_code || '-'}</td>
-            <td>\${responseTime}</td>
-            <td>\${lastCheckTime}</td>
+            <td>${site.name || '-'}</td>
+            <td><a href="${site.url}" target="_blank" rel="noopener noreferrer">${site.url}</a></td>
+            <td><span class="badge ${statusInfo.class}">${statusInfo.text}</span></td>
+            <td>${site.last_status_code || '-'}</td>
+            <td>${responseTime}</td>
+            <td>${lastCheckTime}</td>
             <td>
                 <div class="form-check form-switch">
-                    <input class="form-check-input site-visibility-toggle" type="checkbox" data-site-id="\${site.id}" \${displayState ? 'checked' : ''}\${needsUpdatingState ? ' data-updating="true"' : ''}>
+                    <input class="form-check-input site-visibility-toggle" type="checkbox" data-site-id="${site.id}" ${displayState ? 'checked' : ''}${needsUpdatingState ? ' data-updating="true"' : ''}>
                 </div>
             </td>
             <td>
                 <div class="btn-group">
-                    <button class="btn btn-sm btn-outline-primary edit-site-btn" data-id="\${site.id}" title="编辑">
+                    <button class="btn btn-sm btn-outline-primary edit-site-btn" data-id="${site.id}" title="编辑">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger delete-site-btn" data-id="\${site.id}" data-name="\${site.name || site.url}" data-url="\${site.url}" title="删除">
+                    <button class="btn btn-sm btn-outline-danger delete-site-btn" data-id="${site.id}" data-name="${site.name || site.url}" data-url="${site.url}" title="删除">
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>
             </td>
-        \`;
+        `;
         tableBody.appendChild(row);
     });
 
@@ -13650,7 +13826,7 @@ async function saveSite() {
     let method = 'POST';
 
     if (siteId) { // If siteId exists, it's an update
-        apiUrl = \`/api/admin/sites/\${siteId}\`;
+        apiUrl = `/api/admin/sites/${siteId}`;
         method = 'PUT';
     }
 
@@ -13686,7 +13862,7 @@ function showDeleteSiteConfirmation(siteId, siteName, siteUrl) {
 // 删除网站监控
 async function deleteSite(siteId) {
     try {
-        await apiRequest(\`/api/admin/sites/\${siteId}?confirm=true\`, {
+        await apiRequest(`/api/admin/sites/${siteId}?confirm=true`, {
             method: 'DELETE'
         });
 
@@ -13876,7 +14052,7 @@ function applyBackgroundSettings(enabled, url, opacity, saveToCache = false) {
 
     if (enabled && url) {
         // 设置背景图片
-        body.style.setProperty('--custom-background-url', \`url(\${url})\`);
+        body.style.setProperty('--custom-background-url', `url(${url})`);
         body.style.setProperty('--page-opacity', opacity / 100);
         body.classList.add('custom-background-enabled');
 
@@ -14027,7 +14203,7 @@ function updateServerSortDropdownSelection(selectedSortBy) {
     });
 
     // 为选中的项添加active类
-    const selectedItem = dropdown.querySelector(\`[onclick="autoSortServers('\${selectedSortBy}')"]\`);
+    const selectedItem = dropdown.querySelector(`[onclick="autoSortServers('${selectedSortBy}')"]`);
     if (selectedItem) {
         selectedItem.classList.add('active');
     }
@@ -14044,7 +14220,7 @@ function updateSiteSortDropdownSelection(selectedSortBy) {
     });
 
     // 为选中的项添加active类
-    const selectedItem = dropdown.querySelector(\`[onclick="autoSortSites('\${selectedSortBy}')"]\`);
+    const selectedItem = dropdown.querySelector(`[onclick="autoSortSites('${selectedSortBy}')"]`);
     if (selectedItem) {
         selectedItem.classList.add('active');
     }
@@ -14090,19 +14266,19 @@ function renderMobileAdminServerCards(servers) {
         // 卡片头部
         const cardHeader = document.createElement('div');
         cardHeader.className = 'mobile-card-header';
-        cardHeader.innerHTML = \`
+        cardHeader.innerHTML = `
             <div class="mobile-card-header-left">
-                \${statusBadge}
+                ${statusBadge}
             </div>
-            <h6 class="mobile-card-title text-center">\${server.name || '未命名服务器'}</h6>
+            <h6 class="mobile-card-title text-center">${server.name || '未命名服务器'}</h6>
             <div class="mobile-card-header-right">
                 <span class="me-2">显示</span>
                 <div class="form-check form-switch d-inline-block">
                     <input class="form-check-input server-visibility-toggle" type="checkbox"
-                           data-server-id="\${server.id}" \${server.is_public ? 'checked' : ''}>
+                           data-server-id="${server.id}" ${server.is_public ? 'checked' : ''}>
                 </div>
             </div>
-        \`;
+        `;
 
         // 卡片主体
         const cardBody = document.createElement('div');
@@ -14112,10 +14288,10 @@ function renderMobileAdminServerCards(servers) {
         if (server.description) {
             const descRow = document.createElement('div');
             descRow.className = 'mobile-card-row';
-            descRow.innerHTML = \`
+            descRow.innerHTML = `
                 <span class="mobile-card-label">描述</span>
-                <span class="mobile-card-value">\${server.description}</span>
-            \`;
+                <span class="mobile-card-value">${server.description}</span>
+            `;
             cardBody.appendChild(descRow);
         }
 
@@ -14124,32 +14300,32 @@ function renderMobileAdminServerCards(servers) {
         // 四个按钮 - 两行两列布局
         const buttonsContainer = document.createElement('div');
         buttonsContainer.className = 'mobile-card-buttons-grid';
-        buttonsContainer.innerHTML = \`
+        buttonsContainer.innerHTML = `
             <div class="d-flex gap-2 mb-2">
-                <button class="btn btn-outline-secondary btn-sm flex-fill" onclick="showServerApiKey('\${server.id}')">
+                <button class="btn btn-outline-secondary btn-sm flex-fill" onclick="showServerApiKey('${server.id}')">
                     <i class="bi bi-key"></i> 查看密钥
                 </button>
-                <button class="btn btn-outline-info btn-sm flex-fill" onclick="copyVpsInstallScript('\${server.id}', '\${server.name}', this)">
+                <button class="btn btn-outline-info btn-sm flex-fill" onclick="copyVpsInstallScript('${server.id}', '${server.name}', this)">
                     <i class="bi bi-clipboard"></i> 复制脚本
                 </button>
             </div>
             <div class="d-flex gap-2">
-                <button class="btn btn-outline-primary btn-sm flex-fill" onclick="editServer('\${server.id}')">
+                <button class="btn btn-outline-primary btn-sm flex-fill" onclick="editServer('${server.id}')">
                     <i class="bi bi-pencil"></i> 编辑
                 </button>
-                <button class="btn btn-outline-danger btn-sm flex-fill" onclick="deleteServer('\${server.id}')">
+                <button class="btn btn-outline-danger btn-sm flex-fill" onclick="deleteServer('${server.id}')">
                     <i class="bi bi-trash"></i> 删除
                 </button>
             </div>
-        \`;
+        `;
         cardBody.appendChild(buttonsContainer);
 
         // 最后更新时间 - 底部单行（与PC端功能一致）
         const lastUpdateRow = document.createElement('div');
         lastUpdateRow.className = 'mobile-card-row mobile-card-footer';
-        lastUpdateRow.innerHTML = \`
-            <span class="mobile-card-label">最后更新: \${lastUpdateText}</span>
-        \`;
+        lastUpdateRow.innerHTML = `
+            <span class="mobile-card-label">最后更新: ${lastUpdateText}</span>
+        `;
         cardBody.appendChild(lastUpdateRow);
 
         // 组装卡片
@@ -14172,13 +14348,13 @@ function renderMobileAdminServerCards(servers) {
 // 切换服务器显示状态
 async function toggleServerVisibility(serverId, isPublic) {
     try {
-        const toggle = document.querySelector(\`.server-visibility-toggle[data-server-id="\${serverId}"]\`);
+        const toggle = document.querySelector(`.server-visibility-toggle[data-server-id="${serverId}"]`);
         if (toggle) {
             toggle.disabled = true;
             toggle.style.opacity = '0.6';
         }
 
-        await apiRequest(\`/api/admin/servers/\${serverId}/visibility\`, {
+        await apiRequest(`/api/admin/servers/${serverId}/visibility`, {
             method: 'POST',
             body: JSON.stringify({ is_public: isPublic })
         });
@@ -14198,7 +14374,7 @@ async function toggleServerVisibility(serverId, isPublic) {
 
     } catch (error) {
                 // 恢复开关状态
-        const toggle = document.querySelector(\`.server-visibility-toggle[data-server-id="\${serverId}"]\`);
+        const toggle = document.querySelector(`.server-visibility-toggle[data-server-id="${serverId}"]`);
         if (toggle) {
             toggle.checked = !isPublic;
             toggle.disabled = false;
@@ -14219,7 +14395,7 @@ function renderMobileAdminSiteCards(sites) {
     // 添加居中的排序和添加网站按钮
     const mobileActionsContainer = document.createElement('div');
     mobileActionsContainer.className = 'text-center mb-3';
-    mobileActionsContainer.innerHTML = \`
+    mobileActionsContainer.innerHTML = `
         <div class="d-flex gap-2 justify-content-center">
             <div class="dropdown">
                 <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -14236,7 +14412,7 @@ function renderMobileAdminSiteCards(sites) {
                 <i class="bi bi-plus-circle"></i> 添加监控网站
             </button>
         </div>
-    \`;
+    `;
     mobileContainer.appendChild(mobileActionsContainer);
 
     if (!sites || sites.length === 0) {
@@ -14253,24 +14429,24 @@ function renderMobileAdminSiteCards(sites) {
 
         const statusInfo = getSiteStatusBadge(site.last_status);
         const lastCheckTime = site.last_checked ? new Date(site.last_checked * 1000).toLocaleString() : '从未';
-        const responseTime = site.last_response_time_ms !== null ? \`\${site.last_response_time_ms} ms\` : '-';
+        const responseTime = site.last_response_time_ms !== null ? `${site.last_response_time_ms} ms` : '-';
 
         // 卡片头部 - 完全参考服务器卡片布局：状态在左上角，网站名在中间，显示开关在右上角
         const cardHeader = document.createElement('div');
         cardHeader.className = 'mobile-card-header';
-        cardHeader.innerHTML = \`
+        cardHeader.innerHTML = `
             <div class="mobile-card-header-left">
-                <span class="badge \${statusInfo.class}">\${statusInfo.text}</span>
+                <span class="badge ${statusInfo.class}">${statusInfo.text}</span>
             </div>
-            <h6 class="mobile-card-title text-center">\${site.name || '未命名网站'}</h6>
+            <h6 class="mobile-card-title text-center">${site.name || '未命名网站'}</h6>
             <div class="mobile-card-header-right">
                 <span class="me-2">显示</span>
                 <div class="form-check form-switch d-inline-block">
                     <input class="form-check-input site-visibility-toggle" type="checkbox"
-                           data-site-id="\${site.id}" \${site.is_public ? 'checked' : ''}>
+                           data-site-id="${site.id}" ${site.is_public ? 'checked' : ''}>
                 </div>
             </div>
-        \`;
+        `;
 
         // 卡片主体
         const cardBody = document.createElement('div');
@@ -14279,11 +14455,11 @@ function renderMobileAdminSiteCards(sites) {
         // URL 和网站链接 - 单行
         const urlRow = document.createElement('div');
         urlRow.className = 'mobile-card-row';
-        urlRow.innerHTML = \`
+        urlRow.innerHTML = `
             <span class="mobile-card-label" style="word-break: break-all;">
-                URL: \${site.url}<a href="\${site.url}" target="_blank" rel="noopener noreferrer" class="text-decoration-none" style="margin-left: 4px;"><i class="bi bi-box-arrow-up-right"></i></a>
+                URL: ${site.url}<a href="${site.url}" target="_blank" rel="noopener noreferrer" class="text-decoration-none" style="margin-left: 4px;"><i class="bi bi-box-arrow-up-right"></i></a>
             </span>
-        \`;
+        `;
         cardBody.appendChild(urlRow);
 
 
@@ -14291,24 +14467,24 @@ function renderMobileAdminSiteCards(sites) {
         // 最后检查 - 单行
         const lastCheckRow = document.createElement('div');
         lastCheckRow.className = 'mobile-card-row';
-        lastCheckRow.innerHTML = \`
-            <span class="mobile-card-label">最后检查: \${lastCheckTime}</span>
-        \`;
+        lastCheckRow.innerHTML = `
+            <span class="mobile-card-label">最后检查: ${lastCheckTime}</span>
+        `;
         cardBody.appendChild(lastCheckRow);
 
         // 操作按钮 - 编辑和删除
         const actionsRow = document.createElement('div');
         actionsRow.className = 'mobile-card-row';
-        actionsRow.innerHTML = \`
+        actionsRow.innerHTML = `
             <div class="d-flex gap-2 w-100">
-                <button class="btn btn-outline-primary btn-sm flex-fill" onclick="editSite('\${site.id}')">
+                <button class="btn btn-outline-primary btn-sm flex-fill" onclick="editSite('${site.id}')">
                     <i class="bi bi-pencil"></i> 编辑
                 </button>
-                <button class="btn btn-outline-danger btn-sm flex-fill" onclick="deleteSite('\${site.id}')">
+                <button class="btn btn-outline-danger btn-sm flex-fill" onclick="deleteSite('${site.id}')">
                     <i class="bi bi-trash"></i> 删除
                 </button>
             </div>
-        \`;
+        `;
         cardBody.appendChild(actionsRow);
 
         // 组装卡片
@@ -14331,13 +14507,13 @@ function renderMobileAdminSiteCards(sites) {
 // 切换网站显示状态
 async function toggleSiteVisibility(siteId, isPublic) {
     try {
-        const toggle = document.querySelector(\`.site-visibility-toggle[data-site-id="\${siteId}"]\`);
+        const toggle = document.querySelector(`.site-visibility-toggle[data-site-id="${siteId}"]`);
         if (toggle) {
             toggle.disabled = true;
             toggle.style.opacity = '0.6';
         }
 
-        await apiRequest(\`/api/admin/sites/\${siteId}/visibility\`, {
+        await apiRequest(`/api/admin/sites/${siteId}/visibility`, {
             method: 'POST',
             body: JSON.stringify({ is_public: isPublic })
         });
@@ -14357,7 +14533,7 @@ async function toggleSiteVisibility(siteId, isPublic) {
 
     } catch (error) {
                 // 恢复开关状态
-        const toggle = document.querySelector(\`.site-visibility-toggle[data-site-id="\${siteId}"]\`);
+        const toggle = document.querySelector(`.site-visibility-toggle[data-site-id="${siteId}"]`);
         if (toggle) {
             toggle.checked = !isPublic;
             toggle.disabled = false;
@@ -14425,13 +14601,13 @@ async function exportServers() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = \`servers_export_\${new Date().toISOString().slice(0, 10)}.json\`;
+        a.download = `servers_export_${new Date().toISOString().slice(0, 10)}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
-        showToast('success', \`已导出 \${response.data.length} 个服务器配置\`);
+        showToast('success', `已导出 ${response.data.length} 个服务器配置`);
     } catch (error) {
         showToast('danger', '导出服务器列表失败: ' + error.message);
     }
@@ -14496,13 +14672,13 @@ async function exportSites() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = \`sites_export_\${new Date().toISOString().slice(0, 10)}.json\`;
+        a.download = `sites_export_${new Date().toISOString().slice(0, 10)}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
-        showToast('success', \`已导出 \${response.data.length} 个网站配置\`);
+        showToast('success', `已导出 ${response.data.length} 个网站配置`);
     } catch (error) {
         showToast('danger', '导出网站列表失败: ' + error.message);
     }
