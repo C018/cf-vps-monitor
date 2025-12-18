@@ -9617,14 +9617,14 @@ const pingNodeHistoryStore = {};
 function renderLatencyChart(history, container, emptyText = '暂无延迟数据') {
     if (!container) return;
     if (!history || !history.length) {
-        container.innerHTML = `<div class="text-center p-3 text-muted" style="font-size: 0.875rem;">${emptyText}</div>`;
+        container.innerHTML = \`<div class="text-center p-3 text-muted" style="font-size: 0.875rem;">\${emptyText}</div>\`;
         return;
     }
 
     const data = history.slice().sort((a, b) => a.timestamp - b.timestamp);
     const maxLatency = data.reduce((max, item) => Math.max(max, item.latency || 0), 0);
     if (maxLatency <= 0) {
-        container.innerHTML = `<div class="text-center p-3 text-muted" style="font-size: 0.875rem;">${emptyText}</div>`;
+        container.innerHTML = \`<div class="text-center p-3 text-muted" style="font-size: 0.875rem;">\${emptyText}</div>\`;
         return;
     }
 
@@ -9664,7 +9664,7 @@ function renderLatencyChart(history, container, emptyText = '暂无延迟数据'
         label.setAttribute('text-anchor', 'end');
         label.setAttribute('font-size', '8');
         label.setAttribute('fill', '#666');
-        label.textContent = `${Math.round(maxLatency * (1 - i / 4))} ms`;
+        label.textContent = \`\${Math.round(maxLatency * (1 - i / 4))} ms\`;
         svg.appendChild(label);
     }
 
@@ -9677,7 +9677,7 @@ function renderLatencyChart(history, container, emptyText = '暂无延迟数据'
             : padding.left + (index / lastIndex) * chartWidth;
         const latency = Math.max(0, item.latency || 0);
         const y = padding.top + chartHeight - (latency / maxLatency) * chartHeight;
-        path += index === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`;
+        path += index === 0 ? \`M \${x} \${y}\` : \` L \${x} \${y}\`;
     });
 
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -9702,33 +9702,33 @@ function renderLatencyChart(history, container, emptyText = '暂无延迟数据'
     if (typeof latestLatency === 'number') {
         const badge = document.createElement('div');
         badge.style.cssText = 'position:absolute; top:6px; right:8px; background:rgba(13,110,253,0.1); color:#0d6efd; padding:2px 8px; border-radius:4px; font-size:11px;';
-        badge.textContent = `当前：${latestLatency.toFixed(2)} ms`;
+        badge.textContent = \`当前：\${latestLatency.toFixed(2)} ms\`;
         container.appendChild(badge);
     }
 }
 
 function resetPingChart(serverId) {
-    const chartContainer = document.getElementById(`ping-chart-${serverId}`);
+    const chartContainer = document.getElementById(\`ping-chart-\${serverId}\`);
     renderLatencyChart([], chartContainer, '暂无延迟数据');
 }
 
 function renderPingChart(serverId) {
-    const chartContainer = document.getElementById(`ping-chart-${serverId}`);
+    const chartContainer = document.getElementById(\`ping-chart-\${serverId}\`);
     renderLatencyChart(pingHistoryStore[serverId] || [], chartContainer, '暂无延迟数据');
 }
 
 async function loadPingHistory(serverId) {
-    const chartContainer = document.getElementById(`ping-chart-${serverId}`);
+    const chartContainer = document.getElementById(\`ping-chart-\${serverId}\`);
     if (chartContainer) {
-        chartContainer.innerHTML = `
+        chartContainer.innerHTML = \`
             <div class="text-center p-3 text-muted" style="font-size: 0.875rem;">
                 正在加载延迟数据...
             </div>
-        `;
+        \`;
     }
 
     try {
-        const response = await fetch(`/api/servers/${serverId}/ping/history?period=24h`);
+        const response = await fetch(\`/api/servers/\${serverId}/ping/history?period=24h\`);
         if (response.ok) {
             const data = await response.json();
             const history = (data.ping_history || []).map(item => ({
@@ -9749,14 +9749,14 @@ async function loadPingHistory(serverId) {
 async function loadPingNodeHistory(nodeId) {
     const chartContainer = document.getElementById('pingNodeChartContainer');
     if (chartContainer) {
-        chartContainer.innerHTML = `
+        chartContainer.innerHTML = \`
             <div class="text-center p-3 text-muted" style="font-size: 0.875rem;">
                 正在加载延迟数据...
             </div>
-        `;
+        \`;
     }
 
-    const response = await fetch(`/api/ping-nodes/${nodeId}/history?period=24h`);
+    const response = await fetch(\`/api/ping-nodes/\${nodeId}/history?period=24h\`);
     if (!response.ok) {
         throw new Error('加载Ping节点历史失败');
     }
@@ -9780,7 +9780,7 @@ async function openPingNodeChartModal(nodeId) {
     const titleEl = document.getElementById('pingNodeChartModalLabel');
     if (titleEl) {
         const name = nodeInfo?.name || nodeInfo?.target_address || nodeId;
-        titleEl.textContent = `Ping 节点延迟${name ? ' - ' + name : ''}`;
+        titleEl.textContent = \`Ping 节点延迟\${name ? ' - ' + name : ''}\`;
     }
     const summaryEl = document.getElementById('pingNodeChartSummary');
     if (summaryEl) summaryEl.textContent = '';
@@ -9791,7 +9791,7 @@ async function openPingNodeChartModal(nodeId) {
         if (summaryEl) {
             const history = pingNodeHistoryStore[nodeId] || [];
             const latest = history.slice().sort((a, b) => a.timestamp - b.timestamp).pop();
-            summaryEl.textContent = latest ? `当前延迟：${latest.latency.toFixed(2)} ms` : '暂无延迟数据';
+            summaryEl.textContent = latest ? \`当前延迟：\${latest.latency.toFixed(2)} ms\` : '暂无延迟数据';
         }
     } catch (error) {
         const chartContainer = document.getElementById('pingNodeChartContainer');
@@ -11087,13 +11087,13 @@ function renderPublicPingNodes(nodes = []) {
     mobileContainer.innerHTML = '';
 
     const formatLatency = (value) => {
-        return (typeof value === 'number' && !Number.isNaN(value)) ? `${value.toFixed(2)} ms` : '-';
+        return (typeof value === 'number' && !Number.isNaN(value)) ? \`\${value.toFixed(2)} ms\` : '-';
     };
 
     const formatLossRate = (value) => {
         if (typeof value !== 'number' || Number.isNaN(value)) return '-';
         const clamped = Math.min(Math.max(value, 0), 100);
-        return `${clamped.toFixed(2)}%`;
+        return \`\${clamped.toFixed(2)}%\`;
     };
 
     if (!nodes.length) {
@@ -11112,38 +11112,38 @@ function renderPublicPingNodes(nodes = []) {
         const stdDev = formatLatency(node.std_dev_latency);
 
         const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${node.name || '-'}</td>
-            <td>${node.target_address || '-'}</td>
-            <td>${lossRate}</td>
-            <td><span class="text-primary" style="cursor: pointer;" onclick="openPingNodeChartModal('${node.id}')">${recent}</span></td>
-            <td>${average}</td>
-            <td>${best}</td>
-            <td>${worst}</td>
-            <td>${stdDev}</td>
-            <td>${lastUpdated}</td>
-            <td>${node.description || '-'}</td>
-        `;
+        row.innerHTML = \`
+            <td>\${node.name || '-'}</td>
+            <td>\${node.target_address || '-'}</td>
+            <td>\${lossRate}</td>
+            <td><span class="text-primary" style="cursor: pointer;" onclick="openPingNodeChartModal('\${node.id}')">\${recent}</span></td>
+            <td>\${average}</td>
+            <td>\${best}</td>
+            <td>\${worst}</td>
+            <td>\${stdDev}</td>
+            <td>\${lastUpdated}</td>
+            <td>\${node.description || '-'}</td>
+        \`;
         tableBody.appendChild(row);
 
         const card = document.createElement('div');
         card.className = 'mobile-site-card';
-        card.innerHTML = `
+        card.innerHTML = \`
             <div class="d-flex justify-content-between align-items-center mb-1">
                 <div>
-                    <div class="fw-semibold">${node.name || '未命名节点'}</div>
-                    <small class="text-muted">${node.target_address || ''}</small>
+                    <div class="fw-semibold">\${node.name || '未命名节点'}</div>
+                    <small class="text-muted">\${node.target_address || ''}</small>
                 </div>
-                ${renderPublicPingStatusBadge()}
+                \${renderPublicPingStatusBadge()}
             </div>
-            <div class="text-muted mb-1">${node.description || '无描述'}</div>
-            <div class="mb-1"><small class="text-muted">损失率：</small>${lossRate}</div>
-            <div class="mb-1"><small class="text-muted">最近：</small><span class="text-primary" style="cursor: pointer;" onclick="openPingNodeChartModal('${node.id}')">${recent}</span></div>
-            <div class="mb-1"><small class="text-muted">平均：</small>${average}</div>
-            <div class="mb-1"><small class="text-muted">最佳/最差：</small>${best} / ${worst}</div>
-            <div class="mb-1"><small class="text-muted">标准差：</small>${stdDev}</div>
-            <small class="text-muted">最后更新：${lastUpdated}</small>
-        `;
+            <div class="text-muted mb-1">\${node.description || '无描述'}</div>
+            <div class="mb-1"><small class="text-muted">损失率：</small>\${lossRate}</div>
+            <div class="mb-1"><small class="text-muted">最近：</small><span class="text-primary" style="cursor: pointer;" onclick="openPingNodeChartModal('\${node.id}')">\${recent}</span></div>
+            <div class="mb-1"><small class="text-muted">平均：</small>\${average}</div>
+            <div class="mb-1"><small class="text-muted">最佳/最差：</small>\${best} / \${worst}</div>
+            <div class="mb-1"><small class="text-muted">标准差：</small>\${stdDev}</div>
+            <small class="text-muted">最后更新：\${lastUpdated}</small>
+        \`;
         mobileContainer.appendChild(card);
     });
 }
@@ -11265,7 +11265,7 @@ async function loadSiteUptimeData() {
             const siteId = cell.getAttribute('data-site-id');
             if (!siteId) return null;
             try {
-                const res = await publicApiRequest(`/api/sites/${siteId}/uptime?period=24h`);
+                const res = await publicApiRequest(\`/api/sites/\${siteId}/uptime?period=24h\`);
                 if (res && res.uptime !== undefined) {
                     return {
                         id: siteId,
@@ -11275,7 +11275,7 @@ async function loadSiteUptimeData() {
                     };
                 }
             } catch (err) {
-                console.warn(`公共网站在线率接口失败（${siteId}）：`, err);
+                console.warn(\`公共网站在线率接口失败（\${siteId}）：\`, err);
             }
             return null;
         });
@@ -11298,18 +11298,18 @@ async function loadSiteUptimeData() {
     }
 
     uptimeData.forEach(site => {
-        const uptimeCell = document.querySelector(`td.uptime-cell[data-site-id="${site.id}"]`);
+        const uptimeCell = document.querySelector(\`td.uptime-cell[data-site-id="\${site.id}"]\`);
         if (uptimeCell && site.uptime !== undefined && site.uptime !== null) {
             const uptimePercentage = Number(site.uptime);
             let uptimeClass = 'text-success';
             if (uptimePercentage < 95) uptimeClass = 'text-warning';
             if (uptimePercentage < 80) uptimeClass = 'text-danger';
             
-            uptimeCell.innerHTML = `<span class="${uptimeClass}" style="cursor: pointer; text-decoration: underline;" onclick="showSiteUptimeHistory('${site.id}')">${uptimePercentage}%</span>`;
+            uptimeCell.innerHTML = \`<span class="\${uptimeClass}" style="cursor: pointer; text-decoration: underline;" onclick="showSiteUptimeHistory('\${site.id}')">\${uptimePercentage}%</span>\`;
             const totalHours = site.totalTime !== undefined ? Math.round((site.totalTime || 0) / 60 * 100) / 100 : 0;
             const onlineMinutes = site.onlineTime !== undefined ? site.onlineTime : 0;
             const totalMinutes = site.totalTime !== undefined ? site.totalTime : 0;
-            uptimeCell.title = `点击查看详细历史 - 在线率: ${uptimePercentage}% (在线${onlineMinutes}分钟 / 总计${totalMinutes}分钟，约${totalHours}小时)`;
+            uptimeCell.title = \`点击查看详细历史 - 在线率: \${uptimePercentage}% (在线\${onlineMinutes}分钟 / 总计\${totalMinutes}分钟，约\${totalHours}小时)\`;
         } else if (uptimeCell) {
             uptimeCell.innerHTML = '<span class="text-muted">-</span>';
             uptimeCell.title = '暂无在线率数据';
