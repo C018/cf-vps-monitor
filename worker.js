@@ -2541,7 +2541,7 @@ async function handleVpsRoutes(path, method, request, env, corsHeaders, ctx) {
       return createErrorResponse('Server not found', '服务器不存在', 404, corsHeaders);
     }
 
-    // 实时监控端口已下线，统一返回提示，避免直接访问服务器IP
+    // 实时监控端点已下线，统一返回提示，避免直接访问服务器IP
     return createApiResponse({
       success: false,
       source: 'panel',
@@ -13223,7 +13223,7 @@ async function saveServer() {
                 method: 'PUT',
                 body: JSON.stringify({
                     name: serverName,
-                    description: serverDescription
+                    description: serverDescription,
                 })
             });
         } else {
@@ -13232,7 +13232,7 @@ async function saveServer() {
                 method: 'POST',
                 body: JSON.stringify({
                     name: serverName,
-                    description: serverDescription
+                    description: serverDescription,
                 })
             });
         }
