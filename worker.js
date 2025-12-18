@@ -5978,76 +5978,10 @@ function getIndexHtml() {
                     </div>
                 </div>
 
-                <!-- 分隔线 -->
-                <hr class="my-4">
-
-                <!-- Ping节点展示 -->
-                <div>
-                    <h5 class="card-title mb-3">
-                        <i class="bi bi-diagram-3 me-2"></i>Ping节点
-                    </h5>
-
-                    <div id="publicNoPingNodes" class="alert alert-info d-none">
-                        暂无Ping节点，请在管理后台添加并启用节点。
-                    </div>
-
-                    <!-- 桌面端表格视图 -->
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover align-middle">
-                            <thead>
-                                <tr>
-                                    <th>节点名称</th>
-                                    <th>目标地址</th>
-                                    <th>损失率</th>
-                                    <th>最近</th>
-                                    <th>平均</th>
-                                    <th>最佳</th>
-                                    <th>最差</th>
-                                    <th>标准差</th>
-                                    <th>最后更新</th>
-                                    <th>描述</th>
-                                </tr>
-                            </thead>
-                            <tbody id="publicPingNodesTableBody">
-                                <tr>
-                                    <td colspan="10" class="text-center">加载中...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- 移动端卡片视图 -->
-                    <div class="mobile-card-container" id="publicMobilePingNodes">
-                        <div class="text-center p-3">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">加载中...</span>
-                            </div>
-                            <div class="mt-2">加载Ping节点...</div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
     <!-- End Website Status Section -->
-
-    <!-- Ping 节点延迟图表模态框 -->
-    <div class="modal fade" id="pingNodeChartModal" tabindex="-1" aria-labelledby="pingNodeChartModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="pingNodeChartModalLabel"><i class="bi bi-graph-up me-2"></i>Ping 节点延迟</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="pingNodeChartContainer" style="height: 240px; border: 1px solid #ddd; border-radius: 4px; position: relative; background-color: #f8f9fa;">
-                        <div class="text-center p-3 text-muted">加载中...</div>
-                    </div>
-                    <div id="pingNodeChartSummary" class="mt-2 text-muted small"></div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- Server Detailed row template (hidden by default) -->
     <template id="serverDetailsTemplate">
@@ -6940,74 +6874,6 @@ function getAdminHtml() {
         </div>
     </div>
 
-    <!-- Ping节点管理部分 -->
-    <div class="container mt-4">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <div class="mb-4">
-                    <div class="admin-header-row mb-3">
-                        <div class="admin-header-title">
-                            <h5 class="card-title mb-0">
-                                <i class="bi bi-diagram-3 me-2"></i>Ping节点管理
-                            </h5>
-                        </div>
-                        <div class="admin-header-content">
-                            <div class="admin-actions-group desktop-only">
-                                <button type="button" class="btn btn-success me-2" onclick="showPingNodeModal()">
-                                    <i class="bi bi-plus-circle me-1"></i>添加节点
-                                </button>
-                                <button type="button" class="btn btn-outline-info" onclick="refreshPingNodes()">
-                                    <i class="bi bi-arrow-clockwise me-1"></i>刷新
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="noPingNodes" class="alert alert-info d-none">
-                        暂无ping测试节点。点击"添加节点"来添加第一个节点。
-                    </div>
-
-                    <!-- 桌面端表格视图 -->
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover align-middle">
-                            <thead>
-                                <tr>
-                                    <th>节点名称</th>
-                                    <th>目标地址</th>
-                                    <th>描述</th>
-                                    <th>状态</th>
-                                    <th>创建时间</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pingNodesTable">
-                                <!-- 动态填充 -->
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- 移动端卡片视图 -->
-                    <div class="mobile-card-container" id="mobilePingNodeContainer">
-                        <div class="text-center p-3">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">加载中...</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 移动端操作按钮 -->
-                    <div class="admin-actions-group mobile-only">
-                        <button type="button" class="btn btn-success me-2" onclick="showPingNodeModal()">
-                            <i class="bi bi-plus-circle me-1"></i>添加节点
-                        </button>
-                        <button type="button" class="btn btn-outline-info" onclick="refreshPingNodes()">
-                            <i class="bi bi-arrow-clockwise me-1"></i>刷新
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
     <!-- Global Settings Section (Now integrated above Server Management List) -->
     <!-- The form is now part of the header for Server Management -->
     <!-- End Global Settings Section -->
@@ -7107,48 +6973,6 @@ function getAdminHtml() {
         </div>
     </div>
 
-    <!-- Ping节点模态框 -->
-    <div class="modal fade" id="pingNodeModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="pingNodeModalTitle">添加Ping节点</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="pingNodeForm">
-                        <input type="hidden" id="pingNodeId">
-                        <div class="mb-3">
-                            <label for="pingNodeName" class="form-label">节点名称</label>
-                            <input type="text" class="form-control" id="pingNodeName" placeholder="如：阿里云北京" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="pingNodeTarget" class="form-label">目标地址</label>
-                            <input type="text" class="form-control" id="pingNodeTarget" placeholder="如：8.8.8.8 或 www.google.com" required>
-                            <div class="form-text">支持IP地址或域名</div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="pingNodeDescription" class="form-label">描述（可选）</label>
-                            <textarea class="form-control" id="pingNodeDescription" rows="2" placeholder="节点说明或备注"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="pingNodeEnabled" checked>
-                                <label class="form-check-label" for="pingNodeEnabled">
-                                    启用此节点
-                                </label>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-                    <button type="button" class="btn btn-primary" id="savePingNodeBtn">保存</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- 服务器删除确认模态框 -->
     <div class="modal fade" id="deleteModal" tabindex="-1">
         <div class="modal-dialog">
@@ -7169,45 +6993,25 @@ function getAdminHtml() {
         </div>
     </div>
 
-     <!-- 网站删除确认模态框 -->
-    <div class="modal fade" id="deleteSiteModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">确认删除网站监控</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>确定要停止监控网站 "<span id="deleteSiteName"></span>" (<span id="deleteSiteUrl"></span>) 吗？</p>
-                    <p class="text-danger">此操作不可逆。</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeleteSiteBtn">删除</button>
-                </div>
+<!-- 网站删除确认模态框 -->
+<div class="modal fade" id="deleteSiteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除网站监控</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要停止监控网站 "<span id="deleteSiteName"></span>" (<span id="deleteSiteUrl"></span>) 吗？</p>
+                <p class="text-danger">此操作不可逆。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+            <button type="button" class="btn btn-danger" id="confirmDeleteSiteBtn">删除</button>
             </div>
         </div>
     </div>
-
-    <!-- Ping节点删除确认模态框 -->
-    <div class="modal fade" id="deletePingNodeModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">确认删除Ping节点</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>确定要删除ping节点 "<span id="deletePingNodeName"></span>" 吗？</p>
-                    <p class="text-danger">此操作不可逆，所有相关的ping测试数据也将被删除。</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                    <button type="button" class="btn btn-danger" id="confirmDeletePingNodeBtn">删除</button>
-                </div>
-            </div>
-        </div>
-    </div>
+</div>
 
     <!-- 修改密码模态框 -->
     <div class="modal fade" id="passwordModal" tabindex="-1">
@@ -8865,7 +8669,6 @@ let vpsUpdateInterval = null;
 let siteUpdateInterval = null;
 let serverDataCache = {}; // Cache server data to avoid re-fetching for details
 let vpsStatusCache = {}; // 用于跟踪VPS状态变化
-let publicPingNodes = []; // 首页展示的Ping节点缓存
 const DEFAULT_VPS_REFRESH_INTERVAL_MS = 60000; // Default to 60 seconds for VPS data if backend setting fails
 const DEFAULT_SITE_REFRESH_INTERVAL_MS = 60000; // Default to 60 seconds for Site data
 
@@ -9111,7 +8914,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load initial data
     loadAllServerStatuses();
     loadAllSiteStatuses();
-    loadPublicPingNodes();
 
     // Initialize periodic updates separately
         initializeVpsDataUpdates();
@@ -9612,7 +9414,6 @@ function resetCpuChart(serverId) {
 
 // Ping历史数据缓存
 const pingHistoryStore = {};
-const pingNodeHistoryStore = {};
 
 function renderLatencyChart(history, container, emptyText = '暂无延迟数据') {
     if (!container) return;
@@ -9746,66 +9547,7 @@ async function loadPingHistory(serverId) {
     }
 }
 
-async function loadPingNodeHistory(nodeId) {
-    const chartContainer = document.getElementById('pingNodeChartContainer');
-    if (chartContainer) {
-        chartContainer.innerHTML = \`
-            <div class="text-center p-3 text-muted" style="font-size: 0.875rem;">
-                正在加载延迟数据...
-            </div>
-        \`;
-    }
 
-    const response = await fetch(\`/api/ping-nodes/\${nodeId}/history?period=24h\`);
-    if (!response.ok) {
-        throw new Error('加载Ping节点历史失败');
-    }
-    const data = await response.json();
-    const history = (data.ping_history || []).map(item => ({
-        timestamp: item.timestamp,
-        latency: item.ping_time_ms
-    })).filter(item => typeof item.latency === 'number');
-    pingNodeHistoryStore[nodeId] = history;
-}
-
-function renderPingNodeChart(nodeId) {
-    const chartContainer = document.getElementById('pingNodeChartContainer');
-    renderLatencyChart(pingNodeHistoryStore[nodeId] || [], chartContainer, '暂无延迟数据');
-}
-
-async function openPingNodeChartModal(nodeId) {
-    const modalEl = document.getElementById('pingNodeChartModal');
-    if (!modalEl) return;
-    const nodeInfo = typeof publicPingNodes !== 'undefined' ? publicPingNodes.find(n => n.id === nodeId) : null;
-    const titleEl = document.getElementById('pingNodeChartModalLabel');
-    if (titleEl) {
-        const name = nodeInfo?.name || nodeInfo?.target_address || nodeId;
-        titleEl.textContent = \`Ping 节点延迟\${name ? ' - ' + name : ''}\`;
-    }
-    const summaryEl = document.getElementById('pingNodeChartSummary');
-    if (summaryEl) summaryEl.textContent = '';
-
-    try {
-        await loadPingNodeHistory(nodeId);
-        renderPingNodeChart(nodeId);
-        if (summaryEl) {
-            const history = pingNodeHistoryStore[nodeId] || [];
-            const latest = history.slice().sort((a, b) => a.timestamp - b.timestamp).pop();
-            summaryEl.textContent = latest ? \`当前延迟：\${latest.latency.toFixed(2)} ms\` : '暂无延迟数据';
-        }
-    } catch (error) {
-        const chartContainer = document.getElementById('pingNodeChartContainer');
-        if (chartContainer) {
-            chartContainer.innerHTML = '<div class="text-center p-3 text-danger">加载Ping历史失败</div>';
-        }
-        if (summaryEl) {
-            summaryEl.textContent = '加载Ping历史失败';
-        }
-    }
-
-    const modal = new bootstrap.Modal(modalEl);
-    modal.show();
-}
 
 async function runPingTest(serverId) {
     const latencyDisplay = document.getElementById(\`ping-latency-\${serverId}\`);
@@ -11012,140 +10754,6 @@ function formatUptime(totalSeconds) {
     }
 
     return uptimeString.trim() || '0分钟'; // Default to 0 minutes if string is empty
-}
-
-// --- Ping Nodes (Public Homepage) ---
-
-const UNIX_SECONDS_MAX = 9999999999; // 最大10位秒级Unix时间戳(约2286-11-20)，更大值视为毫秒时间戳；后端存储为秒
-const PUBLIC_PING_NODE_STATUS = { text: '启用', className: 'badge bg-success' }; // 公共接口仅返回启用节点
-
-function normalizeCreatedAtTimestamp(createdAt) {
-    if (typeof createdAt !== 'number' || Number.isNaN(createdAt)) {
-        return null;
-    }
-    // 后端以秒为单位写入；如收到毫秒级数据则数值会超过UNIX_SECONDS_MAX
-    return createdAt > UNIX_SECONDS_MAX ? createdAt : createdAt * 1000;
-}
-
-function renderPublicPingStatusBadge() {
-    return \`<span class="\${PUBLIC_PING_NODE_STATUS.className}">\${PUBLIC_PING_NODE_STATUS.text}</span>\`;
-}
-
-function setPublicPingNodesLoadingState(tableBody, mobileContainer) {
-    if (tableBody) {
-        tableBody.innerHTML = '<tr><td colspan="10" class="text-center">加载中...</td></tr>';
-    }
-    if (mobileContainer) {
-        mobileContainer.innerHTML = \`
-            <div class="text-center p-3">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">加载中...</span>
-                </div>
-                <div class="mt-2">加载Ping节点...</div>
-            </div>
-        \`;
-    }
-}
-
-async function loadPublicPingNodes() {
-    const tableBody = document.getElementById('publicPingNodesTableBody');
-    const mobileContainer = document.getElementById('publicMobilePingNodes');
-    const emptyState = document.getElementById('publicNoPingNodes');
-
-    if (!tableBody || !mobileContainer || !emptyState) {
-        return;
-    }
-
-    setPublicPingNodesLoadingState(tableBody, mobileContainer);
-
-    try {
-        const data = await publicApiRequest('/api/ping-nodes');
-        publicPingNodes = data.ping_nodes || [];
-        renderPublicPingNodes(publicPingNodes);
-
-        if (publicPingNodes.length === 0) {
-            emptyState.classList.remove('d-none');
-        } else {
-            emptyState.classList.add('d-none');
-        }
-    } catch (error) {
-        tableBody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">加载Ping节点失败</td></tr>';
-        mobileContainer.innerHTML = '<div class="text-center text-danger p-3">加载失败</div>';
-        emptyState.classList.remove('d-none');
-    }
-}
-
-function renderPublicPingNodes(nodes = []) {
-    const tableBody = document.getElementById('publicPingNodesTableBody');
-    const mobileContainer = document.getElementById('publicMobilePingNodes');
-
-    if (!tableBody || !mobileContainer) {
-        return;
-    }
-
-    tableBody.innerHTML = '';
-    mobileContainer.innerHTML = '';
-
-    const formatLatency = (value) => {
-        return (typeof value === 'number' && !Number.isNaN(value)) ? \`\${value.toFixed(2)} ms\` : '-';
-    };
-
-    const formatLossRate = (value) => {
-        if (typeof value !== 'number' || Number.isNaN(value)) return '-';
-        const clamped = Math.min(Math.max(value, 0), 100);
-        return \`\${clamped.toFixed(2)}%\`;
-    };
-
-    if (!nodes.length) {
-        tableBody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">暂无Ping节点</td></tr>';
-        mobileContainer.innerHTML = '<div class="text-center text-muted p-3">暂无Ping节点</div>';
-        return;
-    }
-
-    nodes.forEach(node => {
-        const lastUpdated = node.last_timestamp ? new Date(node.last_timestamp * 1000).toLocaleString('zh-CN') : '-';
-        const lossRate = formatLossRate(node.loss_rate);
-        const recent = formatLatency(node.recent_latency);
-        const average = formatLatency(node.average_latency);
-        const best = formatLatency(node.best_latency);
-        const worst = formatLatency(node.worst_latency);
-        const stdDev = formatLatency(node.std_dev_latency);
-
-        const row = document.createElement('tr');
-        row.innerHTML = \`
-            <td>\${node.name || '-'}</td>
-            <td>\${node.target_address || '-'}</td>
-            <td>\${lossRate}</td>
-            <td><span class="text-primary" style="cursor: pointer;" onclick="openPingNodeChartModal('\${node.id}')">\${recent}</span></td>
-            <td>\${average}</td>
-            <td>\${best}</td>
-            <td>\${worst}</td>
-            <td>\${stdDev}</td>
-            <td>\${lastUpdated}</td>
-            <td>\${node.description || '-'}</td>
-        \`;
-        tableBody.appendChild(row);
-
-        const card = document.createElement('div');
-        card.className = 'mobile-site-card';
-        card.innerHTML = \`
-            <div class="d-flex justify-content-between align-items-center mb-1">
-                <div>
-                    <div class="fw-semibold">\${node.name || '未命名节点'}</div>
-                    <small class="text-muted">\${node.target_address || ''}</small>
-                </div>
-                \${renderPublicPingStatusBadge()}
-            </div>
-            <div class="text-muted mb-1">\${node.description || '无描述'}</div>
-            <div class="mb-1"><small class="text-muted">损失率：</small>\${lossRate}</div>
-            <div class="mb-1"><small class="text-muted">最近：</small><span class="text-primary" style="cursor: pointer;" onclick="openPingNodeChartModal('\${node.id}')">\${recent}</span></div>
-            <div class="mb-1"><small class="text-muted">平均：</small>\${average}</div>
-            <div class="mb-1"><small class="text-muted">最佳/最差：</small>\${best} / \${worst}</div>
-            <div class="mb-1"><small class="text-muted">标准差：</small>\${stdDev}</div>
-            <small class="text-muted">最后更新：\${lastUpdated}</small>
-        \`;
-        mobileContainer.appendChild(card);
-    });
 }
 
 // --- Website Status Functions ---
@@ -12621,8 +12229,6 @@ let currentSiteId = null; // For site deletion
 let serverList = [];
 let siteList = []; // For monitored sites
 let hasAddedNewServer = false; // 标记是否添加了新服务器
-let currentPingNodeId = null;
-let pingNodeList = [];
 
 // 页面加载完成后执行
 document.addEventListener('DOMContentLoaded', async function() {
@@ -12645,8 +12251,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     loadServerList();
     // 加载监控网站列表
     loadSiteList();
-    // 加载Ping节点列表
-    refreshPingNodes();
     // 加载Telegram设置
     loadTelegramSettings();
     // 加载背景设置
@@ -12879,19 +12483,9 @@ function initEventListeners() {
         saveSite();
     });
 
-     document.getElementById('confirmDeleteSiteBtn').addEventListener('click', function() {
+    document.getElementById('confirmDeleteSiteBtn').addEventListener('click', function() {
         if (currentSiteId) {
             deleteSite(currentSiteId);
-        }
-    });
-
-    // Ping节点事件
-    document.getElementById('savePingNodeBtn').addEventListener('click', function() {
-        savePingNode();
-    });
-    document.getElementById('confirmDeletePingNodeBtn').addEventListener('click', function() {
-        if (currentPingNodeId) {
-            deletePingNode(currentPingNodeId);
         }
     });
 
@@ -14771,210 +14365,6 @@ async function toggleSiteVisibility(siteId, isPublic) {
         }
 
         showToast('danger', '切换显示状态失败: ' + error.message);
-    }
-}
-
-// --- Ping Node Management ---
-
-async function refreshPingNodes() {
-    const tableBody = document.getElementById('pingNodesTable');
-    const mobileContainer = document.getElementById('mobilePingNodeContainer');
-    const emptyState = document.getElementById('noPingNodes');
-
-    if (tableBody) {
-        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">加载中...</td></tr>';
-    }
-    if (mobileContainer) {
-        mobileContainer.innerHTML = '<div class="text-center p-3"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">加载中...</span></div></div>';
-    }
-
-    try {
-        const data = await apiRequest('/api/admin/ping-nodes');
-        pingNodeList = data.ping_nodes || [];
-        renderPingNodes(pingNodeList);
-        if (emptyState) {
-            if (pingNodeList.length === 0) {
-                emptyState.classList.remove('d-none');
-            } else {
-                emptyState.classList.add('d-none');
-            }
-        }
-    } catch (error) {
-        if (emptyState) {
-            emptyState.classList.remove('d-none');
-        }
-        if (tableBody) {
-            tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-3">加载Ping节点失败</td></tr>';
-        }
-        if (mobileContainer) {
-            mobileContainer.innerHTML = '<div class="text-center text-danger p-3">加载失败</div>';
-        }
-        showToast('danger', '加载Ping节点失败: ' + error.message);
-    }
-}
-
-function renderPingNodes(nodes = []) {
-    const tableBody = document.getElementById('pingNodesTable');
-    const mobileContainer = document.getElementById('mobilePingNodeContainer');
-    const emptyState = document.getElementById('noPingNodes');
-    if (!tableBody || !mobileContainer || !emptyState) return;
-
-    tableBody.innerHTML = '';
-    mobileContainer.innerHTML = '';
-
-    if (!nodes.length) {
-        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">暂无Ping节点</td></tr>';
-        mobileContainer.innerHTML = '<div class="text-center text-muted p-3">暂无Ping节点</div>';
-        emptyState.classList.remove('d-none');
-        return;
-    }
-
-    emptyState.classList.add('d-none');
-
-    nodes.forEach(node => {
-        const createdAt = node.created_at ? new Date(node.created_at * 1000).toLocaleString() : '-';
-        const statusBadge = node.enabled ? '<span class="badge bg-success">启用</span>' : '<span class="badge bg-secondary">禁用</span>';
-
-        const row = document.createElement('tr');
-        row.innerHTML = \`
-            <td>\${node.name || '-'}</td>
-            <td>\${node.target_address || '-'}</td>
-            <td>\${node.description || '-'}</td>
-            <td>\${statusBadge}</td>
-            <td>\${createdAt}</td>
-            <td>
-                <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-primary edit-ping-node" data-id="\${node.id}">
-                        <i class="bi bi-pencil"></i> 编辑
-                    </button>
-                    <button class="btn btn-outline-danger delete-ping-node" data-id="\${node.id}" data-name="\${node.name || node.target_address}">
-                        <i class="bi bi-trash"></i> 删除
-                    </button>
-                </div>
-            </td>
-        \`;
-        tableBody.appendChild(row);
-
-        const card = document.createElement('div');
-        card.className = 'mobile-site-card';
-        card.innerHTML = \`
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <div>
-                    <div class="fw-semibold">\${node.name || '未命名节点'}</div>
-                    <small class="text-muted">\${node.target_address || ''}</small>
-                </div>
-                \${statusBadge}
-            </div>
-            <div class="text-muted mb-2">\${node.description || '无描述'}</div>
-            <div class="d-flex justify-content-between align-items-center">
-                <small class="text-muted">创建于 \${createdAt}</small>
-                <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-primary edit-ping-node" data-id="\${node.id}">编辑</button>
-                    <button class="btn btn-outline-danger delete-ping-node" data-id="\${node.id}" data-name="\${node.name || node.target_address}">删除</button>
-                </div>
-            </div>
-        \`;
-        mobileContainer.appendChild(card);
-    });
-
-    // Bind actions
-    document.querySelectorAll('.edit-ping-node').forEach(btn => {
-        btn.addEventListener('click', function() {
-            showPingNodeModal(this.dataset.id);
-        });
-    });
-
-    document.querySelectorAll('.delete-ping-node').forEach(btn => {
-        btn.addEventListener('click', function() {
-            showDeletePingNodeModal(this.dataset.id, this.dataset.name);
-        });
-    });
-}
-
-function showPingNodeModal(nodeId = null) {
-    const form = document.getElementById('pingNodeForm');
-    if (form) {
-        form.reset();
-    }
-
-    document.getElementById('pingNodeId').value = '';
-    document.getElementById('pingNodeEnabled').checked = true;
-    document.getElementById('pingNodeModalTitle').textContent = '添加Ping节点';
-
-    if (nodeId) {
-        const node = pingNodeList.find(n => n.id === nodeId);
-        if (node) {
-            document.getElementById('pingNodeId').value = node.id;
-            document.getElementById('pingNodeName').value = node.name || '';
-            document.getElementById('pingNodeTarget').value = node.target_address || '';
-            document.getElementById('pingNodeDescription').value = node.description || '';
-            document.getElementById('pingNodeEnabled').checked = !!node.enabled;
-            document.getElementById('pingNodeModalTitle').textContent = '编辑Ping节点';
-        }
-    }
-
-    const modal = new bootstrap.Modal(document.getElementById('pingNodeModal'));
-    modal.show();
-}
-
-async function savePingNode() {
-    const nodeId = document.getElementById('pingNodeId').value;
-    const name = document.getElementById('pingNodeName').value.trim();
-    const target = document.getElementById('pingNodeTarget').value.trim();
-    const description = document.getElementById('pingNodeDescription').value.trim();
-    const enabled = document.getElementById('pingNodeEnabled').checked;
-
-    if (!name || !target) {
-        showToast('warning', '节点名称和目标地址不能为空');
-        return;
-    }
-
-    try {
-        const payload = { name, target_address: target, description, enabled };
-        const url = nodeId ? \`/api/admin/ping-nodes/\${nodeId}\` : '/api/admin/ping-nodes';
-        const method = nodeId ? 'PUT' : 'POST';
-        await apiRequest(url, {
-            method,
-            body: JSON.stringify(payload)
-        });
-
-        const modalInstance = bootstrap.Modal.getInstance(document.getElementById('pingNodeModal'));
-        if (modalInstance) {
-            modalInstance.hide();
-        }
-
-        showToast('success', nodeId ? 'Ping节点已更新' : 'Ping节点已添加');
-        refreshPingNodes();
-    } catch (error) {
-        showToast('danger', '保存Ping节点失败: ' + error.message);
-    }
-}
-
-function showDeletePingNodeModal(nodeId, nodeName) {
-    currentPingNodeId = nodeId;
-    document.getElementById('deletePingNodeName').textContent = nodeName || '';
-
-    const modal = new bootstrap.Modal(document.getElementById('deletePingNodeModal'));
-    modal.show();
-}
-
-async function deletePingNode(nodeId) {
-    try {
-        await apiRequest(\`/api/admin/ping-nodes/\${nodeId}\`, {
-            method: 'DELETE'
-        });
-
-        const modalInstance = bootstrap.Modal.getInstance(document.getElementById('deletePingNodeModal'));
-        if (modalInstance) {
-            modalInstance.hide();
-        }
-
-        showToast('success', 'Ping节点已删除');
-        refreshPingNodes();
-    } catch (error) {
-        showToast('danger', '删除Ping节点失败: ' + error.message);
-    } finally {
-        currentPingNodeId = null;
     }
 }
 
