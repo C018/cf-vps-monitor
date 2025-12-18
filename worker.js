@@ -8612,7 +8612,6 @@ function handleRowClick(event) {
     const clickedRow = event.target.closest('tr.server-row');
     if (!clickedRow) return; // Not a server row
 
-    const  realtime_endpoint= clickedRow.getAttribute('data-realtime-endpoint');
     const  serverId= clickedRow.getAttribute('data-server-id');
     const detailsRow = clickedRow.nextElementSibling; // The details row is the next sibling
 
@@ -9280,7 +9279,6 @@ function renderMobileServerCards(allStatuses) {
 
     allStatuses.forEach(data => {
         const serverId = data.server.id;
-        const realTimeEndPoint = data.server.realtime_endpoint;
         const serverName = data.server.name;
         const metrics = data.metrics;
         const hasError = data.error;
@@ -9289,7 +9287,6 @@ function renderMobileServerCards(allStatuses) {
         card.className = 'mobile-server-card';
         card.setAttribute('data-server-id', serverId);
 
-        card.setAttribute('data-realtime-endpoint', realTimeEndPoint);
         // 确定服务器状态
         let status = 'unknown';
         let lastUpdate = '从未';
@@ -10072,7 +10069,6 @@ function renderServerTable(allStatuses) {
         const mainRow = document.createElement('tr');
         mainRow.classList.add('server-row');
         mainRow.setAttribute('data-server-id', serverId);
-        mainRow.setAttribute('data-realtime-endpoint', realtime_endpoint);
         mainRow.innerHTML = `
             <td>${serverName}</td>
             <td>${statusBadge}</td>
@@ -10086,7 +10082,7 @@ function renderServerTable(allStatuses) {
             <td><span style="color: #000;">${uptime}</span></td>
             <td class="uptime-cell" data-server-id="${serverId}">-</td>
             <td><span style="color: #000;">${lastUpdate}</span></td>
-            <td><span style="display: none" data-realtime-endpoint="${realtime_endpoint}">-</span></td>
+            <td>-</td>
             <td>
                 <!-- 实时监控按钮已移除 -->
             </td>
@@ -12059,7 +12055,6 @@ function renderAdminServerTable(servers) {
     servers.forEach((server, index) => {
         const row = document.createElement('tr');
         row.setAttribute('data-server-id', server.id);
-        row.setAttribute('data-realtime-endpoint', server.realtime_endpoint);
         row.classList.add('server-row-draggable');
         row.draggable = true;
 
@@ -13537,7 +13532,6 @@ function renderMobileAdminServerCards(servers) {
         const card = document.createElement('div');
         card.className = 'mobile-server-card';
         card.setAttribute('data-server-id', server.id);
-        card.setAttribute('data-realtime-endpoint', server.realtime_endpoint);
 
         // 状态显示逻辑（与PC端一致）
         let statusBadge = '<span class="badge bg-secondary">未知</span>';
