@@ -258,7 +258,7 @@ class ConfigCache {
     const cached = this.get(cacheKey);
     if (cached) return cached;
 
-    let query = 'SELECT id, name, description,realtime_endpoint FROM servers';
+    let query = 'SELECT id, name, description FROM servers';
     if (!isAdmin) {
       query += ' WHERE is_public = 1';
     }
@@ -10027,7 +10027,6 @@ function renderServerTable(allStatuses) {
     allStatuses.forEach(data => {
         const serverId = data.server.id;
         const serverName = data.server.name;
-		const realtime_endpoint = data.server.realtime_endpoint; 	  
         const metrics = data.metrics;
         const hasError = data.error;
         let statusBadge = '<span class="badge bg-secondary">未知</span>';
