@@ -8667,18 +8667,21 @@ p, div, span:not(.badge), td, th, .btn, button, a:not(.navbar-brand),
 `;
 }
 
+const INLINE_START = '/*__INLINE__START__';
+const INLINE_END = '__INLINE__END__*/';
+
 function extractMultiline(fn) {
   const source = fn.toString();
-  const start = source.indexOf('/*');
-  const end = source.lastIndexOf('*/');
+  const start = source.indexOf(INLINE_START);
+  const end = source.indexOf(INLINE_END, start + INLINE_START.length);
   if (start === -1 || end === -1 || end <= start) {
-    throw new Error('Failed to extract multiline content');
+    throw new Error('Failed to extract inline content: missing or misplaced markers');
   }
-  return source.slice(start + 2, end);
+  return source.slice(start + INLINE_START.length, end);
 }
 
 function getMainJs() {
-  return extractMultiline(() => {/*// main.js - 首页面的JavaScript逻辑
+  return extractMultiline(() => {/*__INLINE__START__// main.js - 首页面的JavaScript逻辑
 
 // Global variables
 let vpsUpdateInterval = null;
@@ -11913,10 +11916,10 @@ async function renderZoomedTrafficChart(serverId) {
         chartContainer.innerHTML = `<div class="text-center p-5 text-danger">加载图表失败: ${error.message}</div>`;
     }
 }
-*/});
+__INLINE__END__*/});
 }
 function getLoginJs() {
-  return extractMultiline(() => {/*// login.js - 登录页面的JavaScript逻辑
+  return extractMultiline(() => {/*__INLINE__START__// login.js - 登录页面的JavaScript逻辑
 
 // ==================== 统一API请求工具 ====================
 // 注意：此处的apiRequest函数已移至主要位置，避免重复定义
@@ -12255,13 +12258,13 @@ window.addEventListener('storage', function(e) {
                     }
     }
 });
-*/});
+__INLINE__END__*/});
 }
 // Helper functions for updating server/site settings are no longer needed for frequent notifications
 // as that feature is removed.
 
 function getAdminJs() {
-  return extractMultiline(() => {/*// admin.js - 管理后台的JavaScript逻辑
+  return extractMultiline(() => {/*__INLINE__START__// admin.js - 管理后台的JavaScript逻辑
 
 // ==================== 统一API请求工具 ====================
 
@@ -14738,5 +14741,5 @@ async function importSites(file) {
         if (fileInput) fileInput.value = '';
     }
 }
-*/});
+__INLINE__END__*/});
 }
